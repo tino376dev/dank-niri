@@ -10,6 +10,23 @@ This template uses the **multi-stage build architecture** from , combining resou
 
 > Be the one who moves, not the one who is moved.
 
+## What Makes dank-niri Different?
+
+This custom bootc image is based on **Fedora Silverblue** and includes these default configurations:
+
+### Included Applications (Runtime)
+- **CLI Tools (Homebrew)**: bat, eza, fd, ripgrep, gh, git, starship, zoxide, htop, tmux - Modern CLI utilities for enhanced productivity
+- **GUI Apps (Flatpak)**: Firefox, Thunderbird, GNOME core apps, Pinta, Flatseal, Extension Manager, and more - Essential desktop applications
+
+### System Configuration
+- **Podman socket enabled** - Container runtime ready out of the box
+- **Multi-stage build architecture** - Leverages @projectbluefin/common for desktop configuration
+- **Homebrew integration** - Runtime package management via brew
+
+*This image serves as a starting point. Customize by modifying files in `build/`, `custom/brew/`, `custom/flatpaks/`, and `custom/ujust/` directories.*
+
+*Last updated: 2026-01-14*
+
 ## Guided Copilot Mode
 
 Here are the steps to guide copilot to make your own repo, or just use it like a regular image template.
