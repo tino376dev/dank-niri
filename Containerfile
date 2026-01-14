@@ -3,16 +3,16 @@
 ###############################################################################
 # Name: dank-niri
 #
-# IMPORTANT: Change "finpilot" above to your desired project name.
-# This name should be used consistently throughout the repository in:
-#   - Justfile: export image_name := env("IMAGE_NAME", "your-name-here")
-#   - README.md: # your-name-here (title)
-#   - artifacthub-repo.yml: repositoryID: your-name-here
-#   - custom/ujust/README.md: localhost/your-name-here:stable (in bootc switch example)
+# This is the project name for this custom bootc image.
+# It has been configured consistently throughout the repository in:
+#   - Justfile: export image_name := env("IMAGE_NAME", "dank-niri")
+#   - README.md: # dank-niri (title)
+#   - artifacthub-repo.yml: repositoryID: dank-niri
+#   - custom/ujust/README.md: localhost/dank-niri:stable (in bootc switch example)
+#   - .github/workflows/clean.yml: packages: dank-niri
 #
 # The project name defined here is the single source of truth for your
-# custom image's identity. When changing it, update all references above
-# to maintain consistency.
+# custom image's identity.
 ###############################################################################
 
 ###############################################################################
