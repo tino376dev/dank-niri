@@ -82,20 +82,26 @@ Use @projectbluefin/finpilot as a template, name the OS the repository name. Ens
 
 ## Quick Start
 
-### 1. Create Your Repository
+**Note**: This repository has already been configured as **dank-niri**. If you're using this as-is, skip to step 3 below. If you want to create your own custom OS based on this, see the "About This Template" section above.
 
-Click "Use this template" to create a new repository from this template.
+### 1. ~~Create Your Repository~~ ✅ Done
 
-### 2. Rename the Project
+~~Click "Use this template" to create a new repository from this template.~~
 
-Important: Change `finpilot` to your repository name in these 6 files:
+This repository is already set up as **dank-niri**.
 
-1. `Containerfile` (line 4): `# Name: your-repo-name`
-2. `Justfile` (line 1): `export image_name := env("IMAGE_NAME", "your-repo-name")`
-3. `README.md` (line 1): `# your-repo-name`
-4. `artifacthub-repo.yml` (line 5): `repositoryID: your-repo-name`
-5. `custom/ujust/README.md` (~line 175): `localhost/your-repo-name:stable`
-6. `.github/workflows/clean.yml` (line 23): `packages: your-repo-name`
+### 2. ~~Rename the Project~~ ✅ Done
+
+~~Important: Change `finpilot` to your repository name in these 6 files~~
+
+All project files have been renamed from `finpilot` to **dank-niri**:
+
+1. ✅ `Containerfile` (line 4): `# Name: dank-niri`
+2. ✅ `Justfile` (line 1): `export image_name := env("IMAGE_NAME", "dank-niri")`
+3. ✅ `README.md` (line 1): `# dank-niri`
+4. ✅ `artifacthub-repo.yml` (line 5): `repositoryID: dank-niri`
+5. ✅ `custom/ujust/README.md` (~line 175): `localhost/dank-niri:stable`
+6. ✅ `.github/workflows/clean.yml` (line 23): `packages: dank-niri`
 
 ### 3. Enable GitHub Actions
 
