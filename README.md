@@ -1,6 +1,6 @@
 # dank-niri
 
-A template for building custom bootc operating system images based on the lessons from [Universal Blue](https://universal-blue.org/) and [Bluefin](https://projectbluefin.io). It is designed to be used manually, but is optimized to be bootstraped by GitHub Copilot. After set up you'll have your own custom Linux. 
+A template for building custom bootc operating system images based on the lessons from [Universal Blue](https://universal-blue.org/) and [Bluefin](https://projectbluefin.io). It is designed to be used manually, but is optimized to be bootstrapped by GitHub Copilot. After set up you'll have your own custom Linux. 
 
 This template uses the **multi-stage build architecture** from , combining resources from multiple OCI containers for modularity and maintainability. See the [Architecture](#architecture) section below for details.
 
@@ -27,9 +27,13 @@ This custom bootc image is based on **Fedora Silverblue** and includes these def
 
 *Last updated: 2026-01-14*
 
-## Guided Copilot Mode
+## About This Template
 
-Here are the steps to guide copilot to make your own repo, or just use it like a regular image template.
+This repository was created from the [@projectbluefin/finpilot](https://github.com/projectbluefin/finpilot) template and configured as **dank-niri**.
+
+### If You Want to Use This as a Template
+
+You can fork or template this repository to create your own custom OS:
 
 1. Click the green "Use this as a template" button and create a new repository
 2. Select your owner, pick a repo name for your OS, and a description
