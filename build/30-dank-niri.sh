@@ -5,8 +5,6 @@ set -eoux pipefail
 # Source helper functions
 source /ctx/build/copr-helpers.sh
 
-echo` "::group:: Install Dank Material Shell and Niri"
-`
 # Install Niri (Stable)
 # Using yalter/niri COPR
 copr_install_isolated "yalter/niri" niri
