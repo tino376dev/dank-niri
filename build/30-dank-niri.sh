@@ -12,7 +12,8 @@ copr_install_isolated "yalter/niri" niri
 
 # Install Dank Material Shell (Stable)
 # Using avengemedia/dms COPR. Note that enabling this automatically enables avengemedia/danklinux.
-copr_install_isolated "avengemedia/dms" dms dms-greeter
+copr_install_isolated "avengemedia/dms" dms
+copr_install_isolated "avengemedia/dms" dms-greeter
 
 # Enable Greetd
 systemctl enable greetd
