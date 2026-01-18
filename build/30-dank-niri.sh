@@ -3,6 +3,7 @@
 set -eoux pipefail
 
 # Source helper functions
+# shellcheck source=build/copr-helpers.sh
 source /ctx/build/copr-helpers.sh
 
 # Install Niri (Stable)
