@@ -12,7 +12,7 @@ copr_install_isolated "yalter/niri" niri
 
 # Install Dank Material Shell (Stable)
 # Using avengemedia/dms COPR. Note that enabling this automatically enables avengemedia/danklinux.
-copr_install_isolated "avengemedia/danklinux" cliphist danksearch dgop dms-greeter material-symbols-fonts mutagen quickshell
+copr_install_isolated "avengemedia/danklinux" cliphist danksearch dgop dms-greeter material-symbols-fonts matugen quickshell
 copr_install_isolated "avengemedia/dms" dms
 
 # Enable Greetd
