@@ -108,12 +108,12 @@ This PAM configuration works in conjunction with:
 - **greetd**: The display manager service
 - **dms-greeter**: The greeter interface
 
-All enabled via build script (`build/30-dank-niri.sh`):
+Installed via build script (`build/30-dank-niri.sh`):
 ```bash
 dnf install -y gnome-keyring-pam
-systemctl enable --global gnome-keyring-daemon.service
-systemctl enable --global gnome-keyring-daemon.socket
 ```
+
+**CRITICAL**: The gnome-keyring daemon is started by PAM's `auto_start` flag, NOT by systemd. Enabling `gnome-keyring-daemon.service` via systemd creates a race condition where the daemon starts in a locked state before PAM can unlock it with the user's password.
 
 ## References
 
@@ -123,6 +123,30 @@ systemctl enable --global gnome-keyring-daemon.socket
 - [Arch Linux Wiki: GNOME Keyring](https://wiki.archlinux.org/title/GNOME/Keyring)
 
 ## Troubleshooting
+
+### Keyring Prompts "As Soon As the Keyring Is Required"
+
+If you can log in successfully but get prompted to unlock the keyring when an application tries to use it:
+
+**Root Cause**: The gnome-keyring-daemon was started by systemd BEFORE PAM could unlock it with your password.
+
+**Solution**:
+1. **Disable systemd auto-start of the keyring daemon**:
+   ```bash
+   systemctl --user disable gnome-keyring-daemon.service
+   systemctl --user disable gnome-keyring-daemon.socket
+   systemctl --user stop gnome-keyring-daemon.service
+   ```
+
+2. **Verify no systemd unit is starting it**:
+   ```bash
+   systemctl --user status gnome-keyring-daemon.service
+   # Should show: "Unit gnome-keyring-daemon.service could not be found."
+   ```
+
+3. **Log out and log back in** - PAM will start the daemon with `auto_start` in an unlocked state
+
+**Why This Happens**: When systemd starts the daemon before login, it starts in a locked state. PAM's `auto_start` flag then can't properly initialize it because it's already running.
 
 ### Keyring Still Prompts After Fix
 
@@ -137,9 +161,10 @@ systemctl enable --global gnome-keyring-daemon.socket
    rpm -q gnome-keyring-pam
    ```
 
-3. **Check keyring daemon is running**:
+3. **Check that systemd is NOT starting the daemon**:
    ```bash
-   systemctl --user status gnome-keyring-daemon.service
+   systemctl --user is-enabled gnome-keyring-daemon.service 2>/dev/null
+   # Should show: "disabled" or "Failed to get unit file state"
    ```
 
 4. **Reset the keyring** (last resort):
