@@ -15,8 +15,20 @@ copr_install_isolated "yalter/niri" niri
 copr_install_isolated "avengemedia/danklinux" cliphist danksearch dgop dms-greeter material-symbols-fonts matugen quickshell
 copr_install_isolated "avengemedia/dms" dms
 
+# Copy brew system files from OCI container
+cp -avf /ctx/oci/brew/. /
+
 # Enable Greetd
 systemctl enable greetd
+
+# Enable brew setup service
+systemctl enable brew-setup.service
+
+# Enable user services (--global flag makes them available for all users)
+systemctl enable --global dms.service
+systemctl enable --global foot-server.socket
+systemctl enable --global gnome-keyring-daemon.service
+systemctl enable --global gnome-keyring-daemon.socket
 
 dnf install -y brightnessctl foot gnome-keyring-pam micro nautilus openfortivpn power-profiles-daemon xdg-user-dirs xdg-terminal-exec
 
