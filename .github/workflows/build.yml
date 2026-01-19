@@ -123,8 +123,9 @@ jobs:
       # This is done before tagging so all tags reference the optimized image
       - name: Rechunk Image
         run: |
-          # Add localhost/ prefix to prevent podman from searching remote registries
-          IMAGE_REF="localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          # Use containers-storage: prefix to reference the local image in podman storage
+          # This prevents podman from trying to pull from a remote registry
+          IMAGE_REF="containers-storage:localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
           
           echo "Rechunking image: ${IMAGE_REF}"
           
