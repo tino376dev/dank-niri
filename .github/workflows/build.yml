@@ -123,6 +123,10 @@ jobs:
       # This is done before tagging so all tags reference the optimized image
       - name: Rechunk Image
         run: |
+          # The rechunk command uses the image three times:
+          # 1. Container to run (provides bootc-base-imagectl tool)
+          # 2. Source image to rechunk
+          # 3. Destination image (same as source = in-place rechunking)
           sudo podman run --rm --privileged \
             -v /var/lib/containers:/var/lib/containers \
             --entrypoint /usr/libexec/bootc-base-imagectl \
