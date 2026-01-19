@@ -8,15 +8,21 @@ brew "bat"        # cat with syntax highlighting
 brew "eza"        # Modern replacement for ls
 brew "fd"         # Simple, fast alternative to find
 brew "rg"         # ripgrep - faster grep
+brew "git-delta"  # git diff viewer
 
 # Development tools
-brew "gh"         # GitHub CLI
-brew "git"        # Git version control
+# brew "gh"         # GitHub CLI
+# brew "git"        # Git version control
+brew "nushell"    # Nushell
+brew "fish"       # Friendly interactive shell
 
 # Shell enhancements  
 brew "starship"   # Cross-shell prompt
 brew "zoxide"     # Smarter cd command
 
 # Utilities
-brew "htop"       # Interactive process viewer
-brew "tmux"       # Terminal multiplexer
+brew "helix"      # Modern text editor
+brew "numbat"     # First class unit scripting
+brew "yazi"       # File explorer
+brew "ruff"       # Linter for Python
+brew "topiary"    # Tree sitter formatter

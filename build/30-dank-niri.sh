@@ -18,4 +18,4 @@ copr_install_isolated "avengemedia/dms" dms
 # Enable Greetd
 systemctl enable greetd
 
-dnf install -y brightnessctl foot gnome-keyring-pam nautilus xdg-user-dirs xdg-terminal-exec
+dnf install -y brightnessctl foot gnome-keyring-pam micro nautilus openfortivpn power-profiles-daemon xdg-user-dirs xdg-terminal-exec
