@@ -27,9 +27,9 @@ find /ctx/custom/ujust -iname '*.just' -exec printf "\n\n" \; -exec cat {} \; >>
 mkdir -p /etc/flatpak/preinstall.d/
 cp /ctx/custom/flatpaks/*.preinstall /etc/flatpak/preinstall.d/
 
-# Copy system configuration files
+# Copy system configuration files (using -avf to preserve permissions and ownership)
 if [ -d /ctx/custom/system_files ]; then
-    cp -r /ctx/custom/system_files/* /
+    cp -avf /ctx/custom/system_files/. /
 fi
 
 echo "::endgroup::"
