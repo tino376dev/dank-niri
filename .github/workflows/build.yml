@@ -127,7 +127,7 @@ jobs:
           # 1. Container to run (provides bootc-base-imagectl tool)
           # 2. Source image to rechunk
           # 3. Destination image (same as source = in-place rechunking)
-          IMAGE_REF="localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          IMAGE_REF="${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
           
           # Verify image exists before rechunking
           if ! podman image exists "${IMAGE_REF}"; then
