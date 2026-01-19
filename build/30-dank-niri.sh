@@ -20,4 +20,11 @@ systemctl enable greetd
 
 dnf install -y brightnessctl foot gnome-keyring-pam micro nautilus openfortivpn power-profiles-daemon xdg-user-dirs xdg-terminal-exec
 
+# Create greeter system user (REQUIRED for dms-greeter to work)
+# This resolves the tmpfiles.d error: "failed to resolve user greeter: no such process"
+tee /usr/lib/sysusers.d/greeter.conf <<'EOF'
+g greeter 767
+u greeter 767 "Greetd greeter"
+EOF
+
 # Note: greetd PAM configuration with gnome-keyring integration is provided in custom/system_files/etc/pam.d/greetd
