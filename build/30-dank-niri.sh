@@ -20,6 +20,4 @@ systemctl enable greetd
 
 dnf install -y brightnessctl foot gnome-keyring-pam micro nautilus openfortivpn power-profiles-daemon xdg-user-dirs xdg-terminal-exec
 
-# Fix gnome-keyring PAM configuration for greetd
-# This enables gnome-keyring authentication and session modules by removing comment markers
-sed --sandbox -i -e '/gnome_keyring.so/ s/-auth/auth/ ; /gnome_keyring.so/ s/-session/session/' /etc/pam.d/greetd
+# Note: greetd PAM configuration with gnome-keyring integration is provided in custom/system_files/etc/pam.d/greetd
