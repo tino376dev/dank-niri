@@ -27,6 +27,11 @@ find /ctx/custom/ujust -iname '*.just' -exec printf "\n\n" \; -exec cat {} \; >>
 mkdir -p /etc/flatpak/preinstall.d/
 cp /ctx/custom/flatpaks/*.preinstall /etc/flatpak/preinstall.d/
 
+# Copy system configuration files
+if [ -d /ctx/custom/system_files ]; then
+    cp -r /ctx/custom/system_files/* /
+fi
+
 echo "::endgroup::"
 
 echo "::group:: Install Packages"
