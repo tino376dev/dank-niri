@@ -19,3 +19,7 @@ copr_install_isolated "avengemedia/dms" dms
 systemctl enable greetd
 
 dnf5 install -y brightnessctl foot gnome-keyring-pam nautilus xdg-user-dirs xdg-terminal-exec
+
+# Fix gnome-keyring PAM configuration for greetd
+# This enables gnome-keyring authentication and session modules by removing comment markers
+sed --sandbox -i -e '/gnome_keyring.so/ s/-auth/auth/ ; /gnome_keyring.so/ s/-session/session/' /etc/pam.d/greetd
