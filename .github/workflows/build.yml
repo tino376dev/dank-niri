@@ -123,15 +123,11 @@ jobs:
       # This is done before tagging so all tags reference the optimized image
       - name: Rechunk Image
         run: |
-          IMAGE_NAME="${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          # Use the image ID from buildah-build to avoid registry lookups
+          IMAGE_ID="${{ steps.build_image.outputs.image-with-tag }}"
           
-          # Verify image exists before rechunking
-          if ! podman image exists "${IMAGE_NAME}"; then
-            echo "Error: Image ${IMAGE_NAME} not found"
-            exit 1
-          fi
+          echo "Rechunking image: ${IMAGE_ID}"
           
-          # Use containers-storage: prefix to explicitly reference local image
           # The rechunk command uses the image three times:
           # 1. Container to run (provides bootc-base-imagectl tool)
           # 2. Source image to rechunk
@@ -139,10 +135,10 @@ jobs:
           sudo podman run --rm --privileged \
             -v /var/lib/containers:/var/lib/containers \
             --entrypoint /usr/libexec/bootc-base-imagectl \
-            "containers-storage:${IMAGE_NAME}" \
+            "${IMAGE_ID}" \
             rechunk --max-layers 67 \
-            "containers-storage:${IMAGE_NAME}" \
-            "containers-storage:${IMAGE_NAME}"
+            "${IMAGE_ID}" \
+            "${IMAGE_ID}"
 
       # Tag for registry
       # All tags will reference the rechunked image created above
