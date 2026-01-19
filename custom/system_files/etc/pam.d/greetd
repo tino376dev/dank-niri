@@ -3,7 +3,7 @@
 # This file enables authentication and session management for the greetd greeter
 
 # Authentication
--auth       optional     pam_gnome_keyring.so
+auth        optional     pam_gnome_keyring.so
 auth        required     pam_unix.so try_first_pass nullok
 auth        optional     pam_permit.so
 
@@ -15,6 +15,6 @@ account     optional     pam_permit.so
 password    required     pam_unix.so try_first_pass nullok sha512 shadow
 
 # Session management
--session    optional     pam_gnome_keyring.so auto_start
+session     optional     pam_gnome_keyring.so auto_start
 session     required     pam_unix.so
 session     optional     pam_permit.so
