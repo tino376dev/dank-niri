@@ -27,8 +27,9 @@ systemctl enable brew-setup.service
 # Enable user services (--global flag makes them available for all users)
 systemctl enable --global dms.service
 systemctl enable --global dsearch.service
-systemctl enable --global gnome-keyring-daemon.service
-systemctl enable --global gnome-keyring-daemon.socket
+# NOTE: gnome-keyring-daemon is started by PAM (auto_start flag in /etc/pam.d/greetd)
+# Do NOT enable it via systemd as that creates a race condition where the daemon
+# starts locked before PAM can unlock it with the user's password
 
 dnf install -y brightnessctl foot gnome-keyring-pam micro nautilus openfortivpn power-profiles-daemon xdg-user-dirs xdg-terminal-exec
 
