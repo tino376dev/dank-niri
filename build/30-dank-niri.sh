@@ -26,7 +26,6 @@ systemctl enable brew-setup.service
 
 # Enable user services (--global flag makes them available for all users)
 systemctl enable --global dms.service
-systemctl enable --global foot-server.socket
 systemctl enable --global gnome-keyring-daemon.service
 systemctl enable --global gnome-keyring-daemon.socket
 
