@@ -1,6 +1,6 @@
 # dank-niri
 
-A template for building custom bootc operating system images based on the lessons from [Universal Blue](https://universal-blue.org/) and [Bluefin](https://projectbluefin.io). It is designed to be used manually, but is optimized to be bootstraped by GitHub Copilot. After set up you'll have your own custom Linux. 
+A template for building custom bootc operating system images based on the lessons from [Universal Blue](https://universal-blue.org/) and [Bluefin](https://projectbluefin.io). It is designed to be used manually, but is optimized to be bootstrapped by GitHub Copilot. After set up you'll have your own custom Linux. 
 
 This template uses the **multi-stage build architecture** from , combining resources from multiple OCI containers for modularity and maintainability. See the [Architecture](#architecture) section below for details.
 
@@ -10,9 +10,30 @@ This template uses the **multi-stage build architecture** from , combining resou
 
 > Be the one who moves, not the one who is moved.
 
-## Guided Copilot Mode
+## What Makes dank-niri Different?
 
-Here are the steps to guide copilot to make your own repo, or just use it like a regular image template.
+This custom bootc image is based on **Fedora Silverblue** and includes these default configurations:
+
+### Included Applications (Runtime)
+- **CLI Tools (Homebrew)**: bat, eza, fd, ripgrep, gh, git, starship, zoxide, htop, tmux - Modern CLI utilities for enhanced productivity
+- **GUI Apps (Flatpak)**: Firefox, Thunderbird, GNOME core apps, Pinta, Flatseal, Extension Manager, and more - Essential desktop applications
+
+### System Configuration
+- **Podman socket enabled** - Container runtime ready out of the box
+- **Multi-stage build architecture** - Leverages @projectbluefin/common for desktop configuration
+- **Homebrew integration** - Runtime package management via brew
+
+*This image serves as a starting point. Customize by modifying files in `build/`, `custom/brew/`, `custom/flatpaks/`, and `custom/ujust/` directories.*
+
+*Last updated: 2026-01-14*
+
+## About This Template
+
+This repository was created from the [@projectbluefin/finpilot](https://github.com/projectbluefin/finpilot) template and configured as **dank-niri**.
+
+### If You Want to Use This as a Template
+
+You can fork or template this repository to create your own custom OS:
 
 1. Click the green "Use this as a template" button and create a new repository
 2. Select your owner, pick a repo name for your OS, and a description
@@ -61,20 +82,26 @@ Use @projectbluefin/finpilot as a template, name the OS the repository name. Ens
 
 ## Quick Start
 
-### 1. Create Your Repository
+**Note**: This repository has already been configured as **dank-niri**. If you're using this as-is, skip to step 3 below. If you want to create your own custom OS based on this, see the "About This Template" section above.
 
-Click "Use this template" to create a new repository from this template.
+### 1. ~~Create Your Repository~~ ✅ Done
 
-### 2. Rename the Project
+~~Click "Use this template" to create a new repository from this template.~~
 
-Important: Change `finpilot` to your repository name in these 6 files:
+This repository is already set up as **dank-niri**.
 
-1. `Containerfile` (line 4): `# Name: your-repo-name`
-2. `Justfile` (line 1): `export image_name := env("IMAGE_NAME", "your-repo-name")`
-3. `README.md` (line 1): `# your-repo-name`
-4. `artifacthub-repo.yml` (line 5): `repositoryID: your-repo-name`
-5. `custom/ujust/README.md` (~line 175): `localhost/your-repo-name:stable`
-6. `.github/workflows/clean.yml` (line 23): `packages: your-repo-name`
+### 2. ~~Rename the Project~~ ✅ Done
+
+~~Important: Change `finpilot` to your repository name in these 6 files~~
+
+All project files have been renamed from `finpilot` to **dank-niri**:
+
+1. ✅ `Containerfile` (line 4): `# Name: dank-niri`
+2. ✅ `Justfile` (line 1): `export image_name := env("IMAGE_NAME", "dank-niri")`
+3. ✅ `README.md` (line 1): `# dank-niri`
+4. ✅ `artifacthub-repo.yml` (line 5): `repositoryID: dank-niri`
+5. ✅ `custom/ujust/README.md` (~line 175): `localhost/dank-niri:stable`
+6. ✅ `.github/workflows/clean.yml` (line 23): `packages: dank-niri`
 
 ### 3. Enable GitHub Actions
 

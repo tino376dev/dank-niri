@@ -1,24 +1,20 @@
 # Repository Setup Checklist
 
-## Initial Setup
+## ✅ Completed Setup
 
-### 1. Rename Template
-- [x] Update `finpilot` to your name in: Containerfile, Justfile, README.md, artifacthub-repo.yml
+### 1. ✅ Template Renamed
+- ✅ Updated `finpilot` to `dank-niri` in: Containerfile, Justfile, README.md, artifacthub-repo.yml, workflows, custom files
 
-### 2. Enable GitHub Actions
+### 2. GitHub Actions (Ready to Enable)
 - [ ] Settings → Actions → General → Enable workflows
-- [ ] Set "Read and write permissions"
+- [ ] Set "Read and write permissions" (if needed)
 
-### 3. First Push
-```bash
-git add .
-git commit -m "feat: initial customization"
-git push origin main
-```
+Once enabled, the first build will start automatically and create: `ghcr.io/tino376dev/dank-niri:stable`
 
-### 4. Deploy
+### 3. Deploy Your OS
+After the first build completes:
 ```bash
-sudo bootc switch --transport registry ghcr.io/YOUR_USERNAME/YOUR_REPO:stable
+sudo bootc switch --transport registry ghcr.io/tino376dev/dank-niri:stable
 sudo systemctl reboot
 ```
 
@@ -28,6 +24,8 @@ sudo systemctl reboot
 ```bash
 cosign generate-key-pair
 # Add cosign.key to GitHub Secrets as SIGNING_SECRET
-# Uncomment signing in .github/workflows/build.yml
+# Uncomment signing steps in .github/workflows/build.yml
 ```
+
+See README.md for detailed signing instructions.
 
