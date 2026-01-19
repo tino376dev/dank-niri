@@ -118,11 +118,34 @@ jobs:
           labels: ${{ steps.metadata.outputs.labels }}
           oci: false
 
+      # Rechunk image for better update performance
+      # Optimizes bootc image layers, reducing update sizes by 5-10x
+      # This is done before tagging so all tags reference the optimized image
+      - name: Rechunk Image
+        run: |
+          # Add localhost/ prefix to prevent podman from searching remote registries
+          IMAGE_REF="localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          
+          echo "Rechunking image: ${IMAGE_REF}"
+          
+          # The rechunk command uses the image three times:
+          # 1. Container to run (provides bootc-base-imagectl tool)
+          # 2. Source image to rechunk
+          # 3. Destination image (same as source = in-place rechunking)
+          sudo podman run --rm --privileged \
+            -v /var/lib/containers:/var/lib/containers \
+            --entrypoint /usr/libexec/bootc-base-imagectl \
+            "${IMAGE_REF}" \
+            rechunk --max-layers 67 \
+            "${IMAGE_REF}" \
+            "${IMAGE_REF}"
+
       # Tag for registry
+      # All tags will reference the rechunked image created above
       - name: Tag for registry
         run: |
           for tag in ${{ steps.metadata.outputs.tags }}; do
-            podman tag ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} ${{ env.IMAGE_NAME }}:$tag
+            podman tag localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} ${{ env.IMAGE_NAME }}:$tag
           done
 
       # SBOM (OPTIONAL): Software Bill of Materials generation using Syft
