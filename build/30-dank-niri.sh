@@ -41,3 +41,6 @@ u greeter 767 "Greetd greeter"
 EOF
 
 # Note: greetd PAM configuration with gnome-keyring integration is provided in custom/system_files/etc/pam.d/greetd
+
+# Copy runtime scripts to /usr/bin
+cp -avf /ctx/build/scripts/*.sh /usr/bin/
