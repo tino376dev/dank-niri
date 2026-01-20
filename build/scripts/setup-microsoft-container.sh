@@ -17,7 +17,9 @@ if [ "$action" == "install" ]; then
 
   # Install packages inside the container
   distrobox-enter --name microsoft -- bash -c '
-  # set up sharing
+  # Set up screen-sharing support by linking host DBus and systemd
+  # These symlinks allow containerized apps to access the host screen-sharing portals
+  # Required for proper screen-sharing functionality in Wayland/Niri
   sudo ln -s /run/host/run/systemd/system /run/systemd
   sudo mkdir -p /run/dbus
   sudo ln -s /run/host/run/dbus/system_bus_socket /run/dbus/system_bus_socket

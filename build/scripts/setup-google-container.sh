@@ -17,10 +17,13 @@ if [ "$action" == "install" ]; then
 
   # Install packages inside the container
   distrobox-enter --name google -- bash -c '
+  # NOTE: Screen-sharing setup (DBus/systemd linking) is not needed for Chrome/Antigravity
+  # as these applications handle screen-sharing differently than Microsoft products
   # repo: google chrome
   sudo dnf -y install fedora-workstation-repositories
   sudo dnf config-manager setopt google-chrome.enabled=1
   # repo: antigravity ide
+  # NOTE: gpgcheck is disabled because Antigravity does not provide GPG keys
   sudo tee /etc/yum.repos.d/antigravity.repo << EOL
 [antigravity-rpm]
 name=Antigravity RPM Repository
