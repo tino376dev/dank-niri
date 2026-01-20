@@ -82,9 +82,9 @@ install-gimp:
 # Setup Google container with Chrome and Antigravity IDE (usage: ujust google [install|update])
 [group('Apps')]
 google action="install":
-    @/usr/bin/setup-google-container.sh {{action}}
+    @/usr/bin/setup-google-container {{action}}
 
 # Setup Microsoft container with Edge and VSCode Insiders (usage: ujust microsoft [install|update])
 [group('Apps')]
 microsoft action="install":
-    @/usr/bin/setup-microsoft-container.sh {{action}}
+    @/usr/bin/setup-microsoft-container {{action}}
