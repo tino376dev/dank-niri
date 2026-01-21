@@ -115,6 +115,25 @@ dnf install -y gnome-keyring-pam
 
 **CRITICAL**: The gnome-keyring daemon is started by PAM's `auto_start` flag, NOT by systemd. Enabling `gnome-keyring-daemon.service` via systemd creates a race condition where the daemon starts in a locked state before PAM can unlock it with the user's password.
 
+### Greetd's Two-Service Architecture
+
+Greetd uses TWO separate PAM services:
+
+1. **`/etc/pam.d/greetd`** - Authenticates the user through the greeter
+   - Validates the password
+   - Unlocks the keyring
+   
+2. **`/usr/lib/pam.d/greetd-spawn`** - Spawns the user's session
+   - Sets up session environment
+   - **MUST** also have gnome-keyring session setup
+
+Both services need the gnome-keyring configuration. The `greetd-spawn` service requires:
+```pam
+session    optional     pam_gnome_keyring.so auto_start
+```
+
+This ensures the keyring daemon starts in the session environment with proper access to the unlocked keyring.
+
 ## References
 
 - [GNOME Keyring Wiki](https://wiki.gnome.org/Projects/GnomeKeyring)
@@ -156,18 +175,27 @@ If you can log in successfully but get prompted to unlock the keyring when an ap
    ```
    Verify the order matches the fixed configuration above
 
-2. **Verify gnome-keyring-pam is installed**:
+2. **Check greetd-spawn PAM configuration**:
+   ```bash
+   cat /usr/lib/pam.d/greetd-spawn
+   ```
+   Verify it contains:
+   ```
+   session    optional     pam_gnome_keyring.so auto_start
+   ```
+
+3. **Verify gnome-keyring-pam is installed**:
    ```bash
    rpm -q gnome-keyring-pam
    ```
 
-3. **Check that systemd is NOT starting the daemon**:
+4. **Check that systemd is NOT starting the daemon**:
    ```bash
    systemctl --user is-enabled gnome-keyring-daemon.service 2>/dev/null
    # Should show: "disabled" or "Failed to get unit file state"
    ```
 
-4. **Reset the keyring** (last resort):
+5. **Reset the keyring** (last resort):
    ```bash
    rm -rf ~/.local/share/keyrings/
    ```
