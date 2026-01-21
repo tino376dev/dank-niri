@@ -16,6 +16,7 @@ This custom bootc image is based on **Fedora Silverblue** and includes these def
 
 ### Added Packages (Build-time)
 - **System packages**: zsh - Z shell configured as the default login shell for cleaner environmental variable sourcing
+- **D-Bus tools**: dbus-tools - Utilities for sending D-Bus messages (e.g., setting user icon with dbus-send)
 
 ### Included Applications (Runtime)
 - **CLI Tools (Homebrew)**: bat, eza, fd, ripgrep, gh, git, starship, zoxide, htop, tmux - Modern CLI utilities for enhanced productivity
