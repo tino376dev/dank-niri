@@ -14,18 +14,22 @@ This template uses the **multi-stage build architecture** from , combining resou
 
 This custom bootc image is based on **Fedora Silverblue** and includes these default configurations:
 
+### Added Packages (Build-time)
+- **System packages**: zsh - Z shell configured as the default login shell for cleaner environmental variable sourcing
+
 ### Included Applications (Runtime)
 - **CLI Tools (Homebrew)**: bat, eza, fd, ripgrep, gh, git, starship, zoxide, htop, tmux - Modern CLI utilities for enhanced productivity
 - **GUI Apps (Flatpak)**: Firefox, Thunderbird, GNOME core apps, Pinta, Flatseal, Extension Manager, and more - Essential desktop applications
 
 ### System Configuration
 - **Podman socket enabled** - Container runtime ready out of the box
+- **Zsh as default shell** - Configured for new users via `/etc/default/useradd`
 - **Multi-stage build architecture** - Leverages @projectbluefin/common for desktop configuration
 - **Homebrew integration** - Runtime package management via brew
 
 *This image serves as a starting point. Customize by modifying files in `build/`, `custom/brew/`, `custom/flatpaks/`, and `custom/ujust/` directories.*
 
-*Last updated: 2026-01-14*
+*Last updated: 2026-01-21*
 
 ## About This Template
 
