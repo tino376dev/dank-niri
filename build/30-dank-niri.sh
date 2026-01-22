@@ -7,8 +7,8 @@ set -eoux pipefail
 source /ctx/build/copr-helpers.sh
 
 # Install Niri (Stable)
-# Using yalter/niri COPR
-copr_install_isolated "yalter/niri" niri
+# Using yalter/niri COPR without recommended packages
+copr_install_isolated_no_recommends "yalter/niri" niri
 
 # Install Dank Material Shell (Stable)
 # Using avengemedia/dms COPR. Note that enabling this automatically enables avengemedia/danklinux.
