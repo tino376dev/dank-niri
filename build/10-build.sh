@@ -37,7 +37,7 @@ echo "::endgroup::"
 echo "::group:: Install Packages"
 
 # Install packages using dnf5
-dnf5 install -y dbus-tools podman-compose
+dnf5 install -y dbus-tools podman-compose qt5ct qt6ct
 
 # Example using COPR with isolated pattern:
 # copr_install_isolated "ublue-os/staging" package-name

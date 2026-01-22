@@ -16,6 +16,7 @@ This custom bootc image is based on **Fedora Silverblue** and includes these def
 
 ### Added Packages (Build-time)
 - **D-Bus tools**: dbus-tools - Utilities for sending D-Bus messages (e.g., setting user icon with dbus-send)
+- **Qt theming**: qt5ct, qt6ct - Qt configuration tools for better theme customization and appearance control
 
 ### Included Applications (Runtime)
 - **CLI Tools (Homebrew)**: bat, eza, fd, ripgrep, gh, git, starship, zoxide, htop, tmux - Modern CLI utilities for enhanced productivity
@@ -28,7 +29,7 @@ This custom bootc image is based on **Fedora Silverblue** and includes these def
 
 *This image serves as a starting point. Customize by modifying files in `build/`, `custom/brew/`, `custom/flatpaks/`, and `custom/ujust/` directories.*
 
-*Last updated: 2026-01-14*
+*Last updated: 2026-01-22*
 
 ## About This Template
 
