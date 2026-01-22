@@ -37,7 +37,23 @@ echo "::endgroup::"
 echo "::group:: Install Packages"
 
 # Install packages using dnf5
-dnf5 install -y dbus-tools podman-compose qt5ct qt6ct
+dnf5 install -y \
+    brightnessctl \
+    dbus-tools \
+    foot \
+    fuzzel \
+    gnome-keyring-pam \
+    micro \
+    nautilus \
+    openfortivpn \
+    podman-compose \
+    power-profiles-daemon \
+    qt5ct \
+    qt6ct \
+    xdg-desktop-portal-gtk \
+    xdg-desktop-portal-gnome \
+    xdg-terminal-exec \
+    xdg-user-dirs
 
 # Example using COPR with isolated pattern:
 # copr_install_isolated "ublue-os/staging" package-name

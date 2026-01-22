@@ -7,8 +7,8 @@ set -eoux pipefail
 source /ctx/build/copr-helpers.sh
 
 # Install Niri (Stable)
-# Using yalter/niri COPR
-copr_install_isolated "yalter/niri" niri
+# Using yalter/niri COPR without recommended packages
+copr_install_isolated_no_recommends "yalter/niri" niri
 
 # Install Dank Material Shell (Stable)
 # Using avengemedia/dms COPR. Note that enabling this automatically enables avengemedia/danklinux.
@@ -31,7 +31,7 @@ systemctl enable --global dsearch.service
 # Do NOT enable it via systemd as that creates a race condition where the daemon
 # starts locked before PAM can unlock it with the user's password
 
-dnf install -y brightnessctl foot gnome-keyring-pam micro nautilus openfortivpn power-profiles-daemon xdg-user-dirs xdg-terminal-exec
+# Note: Required packages now installed in 10-build.sh instead of here
 
 # Create greeter system user (REQUIRED for dms-greeter to work)
 # This resolves the tmpfiles.d error: "failed to resolve user greeter: no such process"
