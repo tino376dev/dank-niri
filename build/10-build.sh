@@ -37,7 +37,7 @@ echo "::endgroup::"
 echo "::group:: Install Packages"
 
 # Install packages using dnf5
-dnf5 install -y dbus-tools podman-compose zsh
+dnf5 install -y dbus-tools podman-compose
 
 # Example using COPR with isolated pattern:
 # copr_install_isolated "ublue-os/staging" package-name
@@ -49,10 +49,6 @@ echo "::group:: System Configuration"
 # Enable/disable systemd services
 systemctl enable podman.socket
 # Example: systemctl mask unwanted-service
-
-# Set zsh as the default login shell
-# Update /etc/default/useradd to set zsh as default shell for new users
-sed -i 's|SHELL=.*|SHELL=/usr/bin/zsh|' /etc/default/useradd
 
 echo "::endgroup::"
 

@@ -15,7 +15,6 @@ This template uses the **multi-stage build architecture** from , combining resou
 This custom bootc image is based on **Fedora Silverblue** and includes these default configurations:
 
 ### Added Packages (Build-time)
-- **System packages**: zsh - Z shell configured as the default login shell for cleaner environmental variable sourcing
 - **D-Bus tools**: dbus-tools - Utilities for sending D-Bus messages (e.g., setting user icon with dbus-send)
 
 ### Included Applications (Runtime)
@@ -24,13 +23,12 @@ This custom bootc image is based on **Fedora Silverblue** and includes these def
 
 ### System Configuration
 - **Podman socket enabled** - Container runtime ready out of the box
-- **Zsh as default shell** - Configured for new users via `/etc/default/useradd`
 - **Multi-stage build architecture** - Leverages @projectbluefin/common for desktop configuration
 - **Homebrew integration** - Runtime package management via brew
 
 *This image serves as a starting point. Customize by modifying files in `build/`, `custom/brew/`, `custom/flatpaks/`, and `custom/ujust/` directories.*
 
-*Last updated: 2026-01-21*
+*Last updated: 2026-01-14*
 
 ## About This Template
 
