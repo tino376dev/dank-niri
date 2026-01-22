@@ -31,7 +31,7 @@ systemctl enable --global dsearch.service
 # Do NOT enable it via systemd as that creates a race condition where the daemon
 # starts locked before PAM can unlock it with the user's password
 
-# Note: gnome-keyring-pam and other recommended packages now installed in 10-build.sh
+# Note: Required packages now installed in 10-build.sh instead of here
 
 # Create greeter system user (REQUIRED for dms-greeter to work)
 # This resolves the tmpfiles.d error: "failed to resolve user greeter: no such process"
