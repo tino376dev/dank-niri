@@ -1,9 +1,6 @@
 # PAM configuration for greetd-spawn service
 # This service is used by greetd to spawn the user's session
-# The gnome-keyring session setup is REQUIRED here to ensure the keyring
-# daemon is properly started and the session environment has access to it
 auth       include      greetd
 auth       required     pam_env.so conffile=/usr/share/greetd/greetd-spawn.pam_env.conf
 account    include      greetd
 session    include      greetd
-session    optional     pam_gnome_keyring.so auto_start

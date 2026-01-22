@@ -2,9 +2,7 @@
 
 ## Current Status
 
-**⚠️ KNOWN ISSUE**: GNOME Keyring auto-unlock with greetd remains problematic despite correct PAM configuration. This is a known architectural challenge with greetd's two-service PAM design and affects multiple distributions including NixOS (see [nixpkgs#246197](https://github.com/NixOS/nixpkgs/issues/246197)).
-
-The PAM configuration in this repository follows best practices, but users may still experience keyring unlock prompts on login. Investigation is ongoing.
+**✅ SOLUTION FOUND**: Based on analysis of the working zirconium-dev/zirconium repository, the correct approach is to **enable gnome-keyring systemd services** in conjunction with PAM configuration. This differs from the initial understanding that systemd services should not be enabled.
 
 ## Problem Statement
 
@@ -110,16 +108,22 @@ To verify the fix works:
 
 This PAM configuration works in conjunction with:
 - **gnome-keyring-pam**: Provides `pam_gnome_keyring.so`
-- **gnome-keyring**: The keyring daemon and storage
+- **gnome-keyring**: The keyring daemon and storage (auto-dependency of gnome-keyring-pam)
 - **greetd**: The display manager service
 - **dms-greeter**: The greeter interface
 
 Installed via build script (`build/30-dank-niri.sh`):
 ```bash
-dnf install -y gnome-keyring-pam
+dnf install -y gnome-keyring-pam  # gnome-keyring is auto-installed as dependency
 ```
 
-**CRITICAL**: The gnome-keyring daemon is started by PAM's `auto_start` flag, NOT by systemd. Enabling `gnome-keyring-daemon.service` via systemd creates a race condition where the daemon starts in a locked state before PAM can unlock it with the user's password.
+**CRITICAL**: The gnome-keyring systemd services MUST be enabled:
+```bash
+systemctl enable --global gnome-keyring-daemon.service
+systemctl enable --global gnome-keyring-daemon.socket
+```
+
+This approach is confirmed working in the [zirconium-dev/zirconium](https://github.com/zirconium-dev/zirconium) repository.
 
 ### Greetd's Two-Service Architecture
 
@@ -127,18 +131,23 @@ Greetd uses TWO separate PAM services:
 
 1. **`/etc/pam.d/greetd`** - Authenticates the user through the greeter
    - Validates the password
-   - Unlocks the keyring
+   - Captures password with `pam_gnome_keyring.so` 
+   - Starts keyring with `auto_start`
    
 2. **`/usr/lib/pam.d/greetd-spawn`** - Spawns the user's session
    - Sets up session environment
-   - **MUST** also have gnome-keyring session setup
+   - Should NOT duplicate `pam_gnome_keyring.so auto_start` (this causes issues)
+   - Simply includes greetd configuration
 
-Both services need the gnome-keyring configuration. The `greetd-spawn` service requires:
+The `greetd-spawn` service should be minimal:
 ```pam
-session    optional     pam_gnome_keyring.so auto_start
+auth       include      greetd
+auth       required     pam_env.so conffile=/usr/share/greetd/greetd-spawn.pam_env.conf
+account    include      greetd
+session    include      greetd
 ```
 
-This ensures the keyring daemon starts in the session environment with proper access to the unlocked keyring.
+**Note**: The duplicate `session optional pam_gnome_keyring.so auto_start` in greetd-spawn can interfere with proper keyring unlock.
 
 ## References
 
@@ -153,25 +162,23 @@ This ensures the keyring daemon starts in the session environment with proper ac
 
 If you can log in successfully but get prompted to unlock the keyring when an application tries to use it:
 
-**Root Cause**: The gnome-keyring-daemon was started by systemd BEFORE PAM could unlock it with your password.
-
 **Solution**:
-1. **Disable systemd auto-start of the keyring daemon**:
+1. **Verify systemd services are enabled**:
    ```bash
-   systemctl --user disable gnome-keyring-daemon.service
-   systemctl --user disable gnome-keyring-daemon.socket
-   systemctl --user stop gnome-keyring-daemon.service
+   systemctl --user is-enabled gnome-keyring-daemon.service
+   systemctl --user is-enabled gnome-keyring-daemon.socket
+   # Both should show: "enabled"
    ```
 
-2. **Verify no systemd unit is starting it**:
+2. **If not enabled, enable them**:
    ```bash
-   systemctl --user status gnome-keyring-daemon.service
-   # Should show: "Unit gnome-keyring-daemon.service could not be found."
+   systemctl --user enable gnome-keyring-daemon.service
+   systemctl --user enable gnome-keyring-daemon.socket
    ```
 
-3. **Log out and log back in** - PAM will start the daemon with `auto_start` in an unlocked state
+3. **Log out and log back in**
 
-**Why This Happens**: When systemd starts the daemon before login, it starts in a locked state. PAM's `auto_start` flag then can't properly initialize it because it's already running.
+**Why This Works**: The systemd services activate the keyring daemon, which PAM then unlocks with your password during login.
 
 ### Keyring Still Prompts After Fix
 
