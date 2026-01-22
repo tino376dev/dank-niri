@@ -1,5 +1,11 @@
 # GNOME Keyring PAM Configuration for Greetd
 
+## Current Status
+
+**⚠️ KNOWN ISSUE**: GNOME Keyring auto-unlock with greetd remains problematic despite correct PAM configuration. This is a known architectural challenge with greetd's two-service PAM design and affects multiple distributions including NixOS (see [nixpkgs#246197](https://github.com/NixOS/nixpkgs/issues/246197)).
+
+The PAM configuration in this repository follows best practices, but users may still experience keyring unlock prompts on login. Investigation is ongoing.
+
 ## Problem Statement
 
 When logging in through greetd with dms-greeter, users were being prompted to unlock the GNOME keyring despite having successfully authenticated. This creates a poor user experience as users have to enter their password twice - once at the greeter and again to unlock the keyring.
