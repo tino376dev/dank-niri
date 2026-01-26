@@ -40,6 +40,7 @@ echo "::group:: Install Packages"
 dnf5 install -y \
     brightnessctl \
     dbus-tools \
+    fd-find \
     foot \
     fuzzel \
     git-delta \
@@ -52,6 +53,7 @@ dnf5 install -y \
     power-profiles-daemon \
     qt5ct \
     qt6ct \
+    ripgrep \
     xdg-desktop-portal-gtk \
     xdg-desktop-portal-gnome \
     xdg-terminal-exec \
