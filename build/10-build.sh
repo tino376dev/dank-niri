@@ -38,9 +38,11 @@ echo "::group:: Install Packages"
 
 # Install packages using dnf5
 dnf5 install -y \
+    bat \
     brightnessctl \
     dbus-tools \
     fd-find \
+    fish \
     foot \
     fuzzel \
     git-delta \
