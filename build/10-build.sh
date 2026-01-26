@@ -53,7 +53,8 @@ dnf5 install -y \
     xdg-desktop-portal-gtk \
     xdg-desktop-portal-gnome \
     xdg-terminal-exec \
-    xdg-user-dirs
+    xdg-user-dirs \
+    zoxide
 
 # Example using COPR with isolated pattern:
 # copr_install_isolated "ublue-os/staging" package-name
