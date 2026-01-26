@@ -40,6 +40,7 @@ echo "::group:: Install Packages"
 dnf5 install -y \
     brightnessctl \
     dbus-tools \
+    fish \
     foot \
     fuzzel \
     git-delta \
