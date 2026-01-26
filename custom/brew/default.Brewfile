@@ -14,7 +14,6 @@ brew "vivid"      # LS_COLORS generator
 # brew "gh"         # GitHub CLI
 # brew "git"        # Git version control
 brew "nushell"    # Nushell
-brew "fish"       # Friendly interactive shell
 
 # Shell enhancements  
 # brew "starship"   # Cross-shell prompt
