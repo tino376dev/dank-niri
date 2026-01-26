@@ -43,6 +43,7 @@ dnf5 install -y \
     foot \
     fuzzel \
     gnome-keyring-pam \
+    helix \
     micro \
     nautilus \
     openfortivpn \
@@ -56,8 +57,10 @@ dnf5 install -y \
     xdg-user-dirs \
     zoxide
 
-# Example using COPR with isolated pattern:
-# copr_install_isolated "ublue-os/staging" package-name
+# Install starship from COPR
+copr_install_isolated "atim/starship" starship
+# Install nushell from COPR
+copr_install_isolated "atim/nushell" nushell
 
 echo "::endgroup::"
 
