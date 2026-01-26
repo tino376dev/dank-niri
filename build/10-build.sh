@@ -41,6 +41,7 @@ dnf5 install -y \
     bat \
     brightnessctl \
     dbus-tools \
+    fd-find \
     fish \
     foot \
     fuzzel \
@@ -54,6 +55,7 @@ dnf5 install -y \
     power-profiles-daemon \
     qt5ct \
     qt6ct \
+    ripgrep \
     xdg-desktop-portal-gtk \
     xdg-desktop-portal-gnome \
     xdg-terminal-exec \
