@@ -19,7 +19,7 @@ This custom bootc image is based on **Fedora Silverblue** and includes these def
 - **Qt theming**: qt5ct, qt6ct - Qt configuration tools for better theme customization and appearance control
 
 ### Included Applications (Runtime)
-- **CLI Tools (Homebrew)**: bat, eza, fd, ripgrep, gh, git, starship, zoxide, helix, htop, tmux - Modern CLI utilities and text editor for enhanced productivity
+- **CLI Tools (Homebrew)**: bat, eza, fd, ripgrep (rg), git-delta, vivid, nushell, fish, starship, zoxide, helix, numbat, yazi, ruff, topiary - Modern CLI utilities, shells, and text editor for enhanced productivity
 - **GUI Apps (Flatpak)**: Firefox, Thunderbird, GNOME core apps, Pinta, Flatseal, Extension Manager, and more - Essential desktop applications
 
 ### System Configuration
