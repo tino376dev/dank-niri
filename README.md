@@ -18,6 +18,10 @@ This custom bootc image is based on **Fedora Silverblue** and includes these def
 - **Text editors**: helix, micro - Modern terminal-based text editors
 - **D-Bus tools**: dbus-tools - Utilities for sending D-Bus messages (e.g., setting user icon with dbus-send)
 - **Qt theming**: qt5ct, qt6ct - Qt configuration tools for better theme customization and appearance control
+- **Shell enhancement**: zoxide - Smarter cd command with frecency-based directory jumping
+
+### Included Applications (Runtime)
+- **CLI Tools (Homebrew)**: bat, eza, fd, ripgrep, gh, git, starship, htop, tmux - Modern CLI utilities for enhanced productivity
 - **Shell prompt**: starship - Cross-shell prompt customization from atim/starship COPR
 
 ### Included Applications (Runtime)

@@ -55,7 +55,8 @@ dnf5 install -y \
     xdg-desktop-portal-gtk \
     xdg-desktop-portal-gnome \
     xdg-terminal-exec \
-    xdg-user-dirs
+    xdg-user-dirs \
+    zoxide
 
 # Install starship from COPR
 copr_install_isolated "atim/starship" starship

@@ -17,7 +17,8 @@ brew "nushell"    # Nushell
 brew "fish"       # Friendly interactive shell
 
 # Shell enhancements  
-brew "zoxide"     # Smarter cd command
+# brew "starship"   # Cross-shell prompt
+# brew "zoxide"     # Smarter cd command
 
 # Utilities
 brew "numbat"     # First class unit scripting
