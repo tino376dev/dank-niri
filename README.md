@@ -15,11 +15,12 @@ This template uses the **multi-stage build architecture** from , combining resou
 This custom bootc image is based on **Fedora Silverblue** and includes these default configurations:
 
 ### Added Packages (Build-time)
+- **Text editors**: helix, micro - Modern terminal-based text editors
 - **D-Bus tools**: dbus-tools - Utilities for sending D-Bus messages (e.g., setting user icon with dbus-send)
 - **Qt theming**: qt5ct, qt6ct - Qt configuration tools for better theme customization and appearance control
 
 ### Included Applications (Runtime)
-- **CLI Tools (Homebrew)**: bat, eza, fd, ripgrep (rg), git-delta, vivid, nushell, fish, starship, zoxide, helix, numbat, yazi, ruff, topiary - Modern CLI utilities, shells, and text editor for enhanced productivity
+- **CLI Tools (Homebrew)**: bat, eza, fd, ripgrep (rg), git-delta, vivid, nushell, fish, starship, zoxide, numbat, yazi, ruff, topiary - Modern CLI utilities and shells for enhanced productivity
 - **GUI Apps (Flatpak)**: Firefox, Thunderbird, GNOME core apps, Pinta, Flatseal, Extension Manager, and more - Essential desktop applications
 
 ### System Configuration
