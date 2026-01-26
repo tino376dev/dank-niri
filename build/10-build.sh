@@ -42,6 +42,7 @@ dnf5 install -y \
     dbus-tools \
     foot \
     fuzzel \
+    git-delta \
     gnome-keyring-pam \
     helix \
     micro \
@@ -56,6 +57,8 @@ dnf5 install -y \
     xdg-terminal-exec \
     xdg-user-dirs
 
+# Install starship from COPR
+copr_install_isolated "atim/starship" starship
 # Install nushell from COPR
 copr_install_isolated "atim/nushell" nushell
 
