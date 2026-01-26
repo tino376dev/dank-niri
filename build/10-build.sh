@@ -55,8 +55,8 @@ dnf5 install -y \
     xdg-terminal-exec \
     xdg-user-dirs
 
-# Example using COPR with isolated pattern:
-# copr_install_isolated "ublue-os/staging" package-name
+# Install nushell from COPR
+copr_install_isolated "atim/nushell" nushell
 
 echo "::endgroup::"
 
