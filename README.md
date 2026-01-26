@@ -16,6 +16,7 @@ This custom bootc image is based on **Fedora Silverblue** and includes these def
 
 ### Added Packages (Build-time)
 - **Text editors**: helix, micro - Modern terminal-based text editors
+- **File manager**: yazi - Modern terminal file manager (from COPR lihaohong/yazi)
 - **D-Bus tools**: dbus-tools - Utilities for sending D-Bus messages (e.g., setting user icon with dbus-send)
 - **Qt theming**: qt5ct, qt6ct - Qt configuration tools for better theme customization and appearance control
 - **Shell enhancement**: zoxide - Smarter cd command with frecency-based directory jumping
@@ -25,6 +26,7 @@ This custom bootc image is based on **Fedora Silverblue** and includes these def
 - **Shell prompt**: starship - Cross-shell prompt customization from atim/starship COPR
 
 ### Included Applications (Runtime)
+- **CLI Tools (Homebrew)**: bat, eza, fd, ripgrep (rg), git-delta, vivid, nushell, fish, starship, zoxide, numbat, ruff, topiary - Modern CLI utilities and shells for enhanced productivity
 - **CLI Tools (Homebrew)**: bat, eza, fd, ripgrep, gh, git, zoxide, htop, tmux - Modern CLI utilities for enhanced productivity
 - **CLI Tools (Homebrew)**: bat, eza, fd, ripgrep (rg), git-delta, vivid, nushell, fish, starship, zoxide, numbat, yazi, ruff, topiary - Modern CLI utilities and shells for enhanced productivity
 - **GUI Apps (Flatpak)**: Firefox, Thunderbird, GNOME core apps, Pinta, Flatseal, Extension Manager, and more - Essential desktop applications
