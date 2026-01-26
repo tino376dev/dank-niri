@@ -23,6 +23,5 @@ brew "zoxide"     # Smarter cd command
 
 # Utilities
 brew "numbat"     # First class unit scripting
-brew "yazi"       # File explorer
 brew "ruff"       # Linter for Python
 brew "topiary"    # Tree sitter formatter
