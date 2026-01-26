@@ -41,6 +41,7 @@ dnf5 install -y \
     bat \
     brightnessctl \
     dbus-tools \
+    fish \
     foot \
     fuzzel \
     git-delta \
