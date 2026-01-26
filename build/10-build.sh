@@ -43,6 +43,7 @@ dnf5 install -y \
     foot \
     fuzzel \
     gnome-keyring-pam \
+    helix \
     micro \
     nautilus \
     openfortivpn \
@@ -57,6 +58,8 @@ dnf5 install -y \
 
 # Install starship from COPR
 copr_install_isolated "atim/starship" starship
+# Install nushell from COPR
+copr_install_isolated "atim/nushell" nushell
 
 echo "::endgroup::"
 

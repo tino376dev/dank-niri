@@ -21,7 +21,6 @@ brew "fish"       # Friendly interactive shell
 brew "zoxide"     # Smarter cd command
 
 # Utilities
-brew "helix"      # Modern text editor
 brew "numbat"     # First class unit scripting
 brew "yazi"       # File explorer
 brew "ruff"       # Linter for Python
