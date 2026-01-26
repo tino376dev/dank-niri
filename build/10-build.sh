@@ -42,6 +42,7 @@ dnf5 install -y \
     dbus-tools \
     foot \
     fuzzel \
+    git-delta \
     gnome-keyring-pam \
     helix \
     micro \

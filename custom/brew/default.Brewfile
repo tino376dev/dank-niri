@@ -8,7 +8,6 @@ brew "bat"        # cat with syntax highlighting
 brew "eza"        # Modern replacement for ls
 brew "fd"         # Simple, fast alternative to find
 brew "rg"         # ripgrep - faster grep
-brew "git-delta"  # git diff viewer
 brew "vivid"      # LS_COLORS generator
 
 # Development tools
