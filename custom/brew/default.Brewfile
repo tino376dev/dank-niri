@@ -14,7 +14,7 @@ brew "vivid"      # LS_COLORS generator
 # Development tools
 # brew "gh"         # GitHub CLI
 # brew "git"        # Git version control
-# nushell is now installed in base system from COPR atim/nushell (see build/10-build.sh)
+brew "nushell"    # Nushell
 brew "fish"       # Friendly interactive shell
 
 # Shell enhancements  
