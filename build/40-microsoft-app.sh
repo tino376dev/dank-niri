@@ -26,12 +26,19 @@ rpm --import https://packages.microsoft.com/keys/microsoft.asc
 echo "Installing Microsoft Edge..."
 
 # Add Microsoft Edge repository
-dnf5 config-manager addrepo --from-repofile=https://packages.microsoft.com/yumrepos/edge/config.repo --save-filename=microsoft-edge
+cat > /etc/yum.repos.d/microsoft-edge.repo << 'EOF'
+[microsoft-edge]
+name=Microsoft Edge
+baseurl=https://packages.microsoft.com/yumrepos/edge
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.microsoft.com/keys/microsoft.asc
+EOF
 
 # Install Microsoft Edge
 dnf5 install -y microsoft-edge-stable
 
-# Remove repo file (required - repos don't work at runtime in bootc images)
+# Clean up repo file (required - repos don't work at runtime in bootc images)
 rm -f /etc/yum.repos.d/microsoft-edge.repo
 
 echo "Microsoft Edge installed successfully"
@@ -40,12 +47,19 @@ echo "Microsoft Edge installed successfully"
 echo "Installing VS Code Insiders..."
 
 # Add VS Code repository
-dnf5 config-manager addrepo --from-repofile=https://packages.microsoft.com/yumrepos/vscode/config.repo --save-filename=vscode
+cat > /etc/yum.repos.d/vscode.repo << 'EOF'
+[vscode]
+name=Visual Studio Code
+baseurl=https://packages.microsoft.com/yumrepos/vscode
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.microsoft.com/keys/microsoft.asc
+EOF
 
 # Install VS Code Insiders
 dnf5 install -y code-insiders
 
-# Remove repo file (required - repos don't work at runtime in bootc images)
+# Clean up repo file (required - repos don't work at runtime in bootc images)
 rm -f /etc/yum.repos.d/vscode.repo
 
 echo "VS Code Insiders installed successfully"
