@@ -62,13 +62,8 @@ dnf5 install -y \
     xdg-user-dirs \
     zoxide
 
-# Install starship from COPR
-copr_install_isolated "atim/starship" starship
 # Install nushell from COPR
 copr_install_isolated "atim/nushell" nushell
-
-# Install yazi from COPR (with recommends)
-copr_install_isolated "lihaohong/yazi" yazi
 
 echo "::endgroup::"
 
