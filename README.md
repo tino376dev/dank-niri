@@ -17,6 +17,7 @@ This custom bootc image is based on **Fedora Silverblue** and includes these def
 ### Added Packages (Build-time)
 - **System packages**: bat, brightnessctl, dbus-tools, fd-find, fish, foot, fuzzel, git-delta, gnome-keyring-pam, helix, micro, nautilus, openfortivpn, podman-compose, power-profiles-daemon, qt5ct, qt6ct, ripgrep, xdg-desktop-portal-gtk, xdg-desktop-portal-gnome, xdg-terminal-exec, xdg-user-dirs, zoxide
 - **From COPR**: starship (atim/starship), nushell (atim/nushell), yazi (lihaohong/yazi)
+- **Microsoft apps**: Microsoft Edge (stable), VS Code Insiders - Installed from official Microsoft repositories
 
 ### Included Applications (Runtime)
 - **CLI Tools (Homebrew)**: eza, vivid, numbat, ruff, topiary - Modern CLI utilities for enhanced productivity
