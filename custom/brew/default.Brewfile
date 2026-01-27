@@ -15,8 +15,8 @@ brew "vivid"      # LS_COLORS generator
 # brew "nushell"    # Nushell (installed via COPR in build/10-build.sh)
 
 # Shell enhancements  
-# brew "starship"   # Cross-shell prompt
-# brew "zoxide"     # Smarter cd command
+# brew "starship"   # Cross-shell prompt (installed via COPR in build/10-build.sh)
+# brew "zoxide"     # Smarter cd command (installed via dnf in build/10-build.sh)
 
 # Utilities
 brew "numbat"     # First class unit scripting
