@@ -12,7 +12,7 @@ brew "vivid"      # LS_COLORS generator
 # Development tools
 # brew "gh"         # GitHub CLI
 # brew "git"        # Git version control
-brew "nushell"    # Nushell
+# brew "nushell"    # Nushell (installed via COPR in build/10-build.sh)
 
 # Shell enhancements  
 # brew "starship"   # Cross-shell prompt
