@@ -20,6 +20,7 @@ session    optional     pam_gnome_keyring.so auto_start
 - ✅ **Standard login**: Keyring unlocks automatically with your login password
 - ✅ **LUKS users**: Works if your LUKS password **matches** your login password
 - ✅ **No additional setup**: Everything works out of the box
+- ✅ **Autologin with LUKS**: See [AUTOLOGIN_LUKS_KEYRING.md](AUTOLOGIN_LUKS_KEYRING.md) for automatic keyring unlock on autologin using your LUKS password
 
 ### If You Still Get Keyring Prompts
 

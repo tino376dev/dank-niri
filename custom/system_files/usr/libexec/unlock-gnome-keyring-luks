@@ -1,0 +1,99 @@
+#!/usr/bin/bash
+# GNOME Keyring unlock script for autologin with LUKS encryption
+# This script reads the LUKS password from the kernel keyring and uses it
+# to unlock the GNOME keyring on autologin
+#
+# Based on: https://wiki.archlinux.org/title/Greetd#Unlocking_keyring_on_autologin_using_the_cryptsetup_password
+#
+# Requirements:
+# - keyutils package (for keyctl command)
+# - LUKS password must match user password
+# - Called via pam_exec.so in PAM stack
+
+set -euo pipefail
+
+# Log function for debugging
+log() {
+    echo "unlock-gnome-keyring-luks: $*" | systemd-cat -t unlock-gnome-keyring-luks -p info
+}
+
+# Error log function
+log_error() {
+    echo "unlock-gnome-keyring-luks: ERROR: $*" | systemd-cat -t unlock-gnome-keyring-luks -p err
+}
+
+log "Starting GNOME keyring unlock from LUKS password"
+
+# Check if PAM_USER is set
+if [ -z "${PAM_USER:-}" ]; then
+    log_error "PAM_USER not set, cannot proceed"
+    exit 0  # Exit 0 to not block login
+fi
+
+log "Attempting to unlock keyring for user: $PAM_USER"
+
+# Try to find the LUKS password in the kernel keyring
+# The password may be stored under different key descriptions depending on the setup
+KEY_DESCRIPTIONS=(
+    "cryptsetup"
+    "user-crypto"
+)
+
+PASSWORD=""
+for KEY_DESC in "${KEY_DESCRIPTIONS[@]}"; do
+    # Try to read the key (this requires root or the key owner)
+    if PASSWORD=$(keyctl pipe @u "$KEY_DESC" 2>/dev/null); then
+        log "Found LUKS password in kernel keyring (key: $KEY_DESC)"
+        break
+    fi
+done
+
+# If we couldn't find the password, try alternative methods
+if [ -z "$PASSWORD" ]; then
+    # List available keys for debugging
+    log "Could not find LUKS password in kernel keyring, trying alternative keys"
+    
+    # Try to find any key that might contain the password
+    # This is more permissive and will try all user keys
+    KEYRING_KEYS=$(keyctl list @u 2>/dev/null | grep -oP '\d+' || true)
+    
+    for KEY_ID in $KEYRING_KEYS; do
+        # Try to read each key
+        if TEMP_PASS=$(keyctl pipe "$KEY_ID" 2>/dev/null); then
+            # Basic sanity check - password should be reasonable length
+            PASS_LEN=${#TEMP_PASS}
+            if [ "$PASS_LEN" -ge 4 ] && [ "$PASS_LEN" -le 256 ]; then
+                PASSWORD="$TEMP_PASS"
+                log "Found potential password in key ID: $KEY_ID"
+                break
+            fi
+        fi
+    done
+fi
+
+# If still no password found, exit gracefully
+if [ -z "$PASSWORD" ]; then
+    log_error "Could not retrieve LUKS password from kernel keyring"
+    log_error "Available keys: $(keyctl show @u 2>&1 || echo 'none')"
+    exit 0  # Exit 0 to not block login
+fi
+
+# Unlock the GNOME keyring using the password
+# The keyring is typically named "login" and located at ~/.local/share/keyrings/
+KEYRING_PATH="/home/$PAM_USER/.local/share/keyrings/login.keyring"
+
+if [ ! -f "$KEYRING_PATH" ]; then
+    log "GNOME keyring does not exist yet for user $PAM_USER, it will be created on first use"
+    exit 0
+fi
+
+# Use echo to pipe password to gnome-keyring-daemon
+# This unlocks the keyring without prompting
+if echo -n "$PASSWORD" | gnome-keyring-daemon --unlock 2>&1 | systemd-cat -t unlock-gnome-keyring-luks -p debug; then
+    log "Successfully unlocked GNOME keyring for user $PAM_USER"
+else
+    log_error "Failed to unlock GNOME keyring (password may not match keyring password)"
+    # Don't fail - allow login to proceed
+fi
+
+exit 0

@@ -28,10 +28,11 @@ This custom bootc image is based on **Fedora Silverblue** and includes these def
 - **Podman socket enabled** - Container runtime ready out of the box
 - **Multi-stage build architecture** - Leverages @projectbluefin/common for desktop configuration
 - **Homebrew integration** - Runtime package management via brew
+- **Autologin with LUKS keyring unlock** (optional) - Automatically unlock GNOME keyring using your LUKS password on autologin (see [docs/AUTOLOGIN_LUKS_KEYRING.md](docs/AUTOLOGIN_LUKS_KEYRING.md))
 
 *This image serves as a starting point. Customize by modifying files in `build/`, `custom/brew/`, `custom/flatpaks/`, and `custom/ujust/` directories.*
 
-*Last updated: 2026-01-27*
+*Last updated: 2026-01-28*
 
 ## About This Template
 

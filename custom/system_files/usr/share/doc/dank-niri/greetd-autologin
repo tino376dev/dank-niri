@@ -1,0 +1,46 @@
+#%PAM-1.0
+# PAM configuration for greetd with autologin and LUKS keyring unlock
+# This is an OPTIONAL configuration file for users who want autologin
+# with automatic GNOME Keyring unlock using their LUKS password
+#
+# To enable autologin:
+# 1. Edit /etc/greetd/config.toml and set:
+#    [initial_session]
+#    command = "niri"  # or your preferred session command
+#    user = "yourusername"
+#
+# 2. Copy this file to replace the default:
+#    sudo cp /usr/share/doc/dank-niri/greetd-autologin /usr/lib/pam.d/greetd
+#
+# 3. Reboot
+#
+# IMPORTANT: Your LUKS password MUST match your user password for this to work
+#
+# Based on: https://wiki.archlinux.org/title/Greetd#Unlocking_keyring_on_autologin_using_the_cryptsetup_password
+
+# Authentication - for autologin, auth succeeds without password prompt
+auth       sufficient   pam_permit.so
+auth       include      postlogin
+
+# Account validation
+account    required     pam_nologin.so
+account    include      system-auth
+
+# Password management - not used in autologin
+password   include      system-auth
+
+# Session management
+session    required     pam_selinux.so close
+session    required     pam_loginuid.so
+session    optional     pam_keyinit.so force revoke
+session    include      system-auth
+session    required     pam_selinux.so open
+
+# Unlock GNOME keyring using LUKS password from kernel keyring
+# This MUST run before pam_gnome_keyring.so auto_start
+session    optional     pam_exec.so /usr/libexec/unlock-gnome-keyring-luks
+
+# Start GNOME keyring daemon (should already be unlocked by the script above)
+session    optional     pam_gnome_keyring.so auto_start
+
+session    include      postlogin

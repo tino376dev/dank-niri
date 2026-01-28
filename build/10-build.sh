@@ -48,6 +48,7 @@ dnf5 install -y \
     git-delta \
     gnome-keyring-pam \
     helix \
+    keyutils \
     micro \
     nautilus \
     openfortivpn \
