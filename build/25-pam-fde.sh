@@ -31,6 +31,10 @@ cd pam_fde_boot_pw
 # Build and install
 meson setup build
 ninja -C build
+
+# Create target directory for installation
+mkdir -p /usr/local/lib/security
+
 ninja -C build install
 
 # Verify installation
