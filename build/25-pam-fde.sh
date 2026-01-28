@@ -35,9 +35,16 @@ meson setup build --prefix=/usr
 ninja -C build
 ninja -C build install
 
-# Verify installation (check lib64 on x86_64 systems, lib on others)
+# Verify installation and create symlink for cross-architecture compatibility
+# On x86_64, meson installs to /usr/lib64/security/
+# On other architectures, it installs to /usr/lib/security/
+# Create symlink to ensure PAM can find it in either location
 if [ -f /usr/lib64/security/pam_fde_boot_pw.so ]; then
     echo "pam_fde_boot_pw.so installed successfully to /usr/lib64/security/"
+    # Create symlink for PAM to find it (some PAM configs only search /usr/lib/security/)
+    mkdir -p /usr/lib/security
+    ln -sf /usr/lib64/security/pam_fde_boot_pw.so /usr/lib/security/pam_fde_boot_pw.so
+    echo "Created symlink: /usr/lib/security/pam_fde_boot_pw.so -> /usr/lib64/security/pam_fde_boot_pw.so"
 elif [ -f /usr/lib/security/pam_fde_boot_pw.so ]; then
     echo "pam_fde_boot_pw.so installed successfully to /usr/lib/security/"
 else
