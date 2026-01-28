@@ -251,12 +251,15 @@ This image includes `pam_fde_boot_pw.so` by default, which automatically injects
 
 **Verify it's working:**
 ```bash
-# Check if pam_fde_boot_pw is installed (should exist)
+# Check if pam_fde_boot_pw is installed (should exist in both locations)
 ls -la /usr/lib/security/pam_fde_boot_pw.so
+ls -la /usr/lib64/security/pam_fde_boot_pw.so  # On x86_64 systems
 
 # Check if it's in PAM config (should see inject_for=gkr)
 grep "pam_fde_boot_pw" /etc/pam.d/greetd
 ```
+
+**Note:** The build creates symlinks between `/usr/lib/security/` and `/usr/lib64/security/` to ensure the module is accessible regardless of architecture. This cross-architecture compatibility ensures PAM can find the module on all systems.
 
 **Alternative Option: Match Login Password to LUKS Password**
 - Change your user login password to match your LUKS password
@@ -392,8 +395,9 @@ This image includes `pam_fde_boot_pw.so` which:
 Check that everything is installed and configured:
 
 ```bash
-# Verify pam_fde_boot_pw is installed
+# Verify pam_fde_boot_pw is installed (check both locations)
 ls -la /usr/lib/security/pam_fde_boot_pw.so
+ls -la /usr/lib64/security/pam_fde_boot_pw.so  # On x86_64 systems
 
 # Verify PAM configuration
 grep "pam_fde_boot_pw" /etc/pam.d/greetd
@@ -401,6 +405,8 @@ grep "pam_fde_boot_pw" /etc/pam.d/greetd
 # Check systemd in initrd (should see files)
 ls /usr/lib/systemd/system/initrd*
 ```
+
+**Note:** On x86_64 systems, the build creates a symlink from `/usr/lib/security/` to `/usr/lib64/security/` for cross-architecture PAM module compatibility. Both paths should work.
 
 Fedora and bootc-based systems typically use systemd in initrd by default.
 
