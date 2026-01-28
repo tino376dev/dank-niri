@@ -70,12 +70,34 @@ fi
 
 echo "::endgroup::"
 
+echo "::group:: Set SELinux Contexts"
+
+# Restore SELinux contexts for the installed PAM module
+# This ensures the module has the correct security labels for Fedora/SELinux
+if command -v restorecon &> /dev/null; then
+    echo "Restoring SELinux contexts for PAM module..."
+    restorecon -v /usr/lib*/security/pam_fde_boot_pw.so 2>/dev/null || true
+    echo "✓ SELinux contexts restored"
+else
+    echo "⚠ restorecon not available, skipping SELinux context restoration"
+    echo "  (This is normal in container builds - contexts will be set at runtime)"
+fi
+
+echo "::endgroup::"
+
 echo "::group:: Verify Installation"
 
 # Verify the module was installed correctly
 if [ -f /usr/lib/security/pam_fde_boot_pw.so ] || [ -f /usr/lib64/security/pam_fde_boot_pw.so ]; then
     echo "✓ pam_fde_boot_pw.so installed successfully"
     ls -la /usr/lib*/security/pam_fde_boot_pw.so
+    
+    # Show SELinux context if available
+    if command -v ls &> /dev/null; then
+        echo ""
+        echo "SELinux contexts:"
+        ls -Z /usr/lib*/security/pam_fde_boot_pw.so 2>/dev/null || echo "  (Not available in container build)"
+    fi
 else
     echo "✗ ERROR: pam_fde_boot_pw.so not found in expected locations"
     exit 1
