@@ -35,13 +35,15 @@ meson setup build --prefix=/usr
 ninja -C build
 ninja -C build install
 
-# Verify installation
-if [ ! -f /usr/lib/security/pam_fde_boot_pw.so ]; then
+# Verify installation (check lib64 on x86_64 systems, lib on others)
+if [ -f /usr/lib64/security/pam_fde_boot_pw.so ]; then
+    echo "pam_fde_boot_pw.so installed successfully to /usr/lib64/security/"
+elif [ -f /usr/lib/security/pam_fde_boot_pw.so ]; then
+    echo "pam_fde_boot_pw.so installed successfully to /usr/lib/security/"
+else
     echo "ERROR: pam_fde_boot_pw.so was not installed correctly"
     exit 1
 fi
-
-echo "pam_fde_boot_pw.so installed successfully to /usr/lib/security/"
 
 # Clean up build artifacts
 cd /
