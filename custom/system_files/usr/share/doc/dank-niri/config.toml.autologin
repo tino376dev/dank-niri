@@ -1,0 +1,42 @@
+# Example greetd configuration with autologin enabled
+# 
+# To enable autologin:
+# 1. Copy this file to /etc/greetd/config.toml:
+#    sudo cp /usr/share/doc/dank-niri/config.toml.autologin /etc/greetd/config.toml
+#
+# 2. Replace "yourusername" with your actual username
+#
+# 3. Copy the autologin PAM configuration:
+#    sudo cp /usr/share/doc/dank-niri/greetd-autologin /usr/lib/pam.d/greetd
+#
+# 4. Reboot
+#
+# IMPORTANT: 
+# - Your LUKS password MUST match your user password
+# - Autologin skips the greeter and logs you in automatically
+# - Only enable on single-user systems where physical security is guaranteed
+
+[general]
+# Use the default greetd-spawn service
+service = "greetd-spawn"
+
+[terminal]
+# Virtual terminal to use (usually vt1)
+vt = 1
+
+# Default session (only shown if autologin fails or is disabled)
+[default_session]
+command = "dms-greeter --command niri"
+user = "greeter"
+
+# Autologin session - runs on boot without password prompt
+[initial_session]
+# Replace "yourusername" with your actual username
+user = "yourusername"
+
+# Session command - choose one:
+# For Niri:
+command = "niri"
+# For Niri with DMS:
+# command = "dms-session -- niri"
+# For other sessions, adjust accordingly

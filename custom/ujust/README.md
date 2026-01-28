@@ -19,11 +19,13 @@ Create `.just` files in this directory with your custom commands:
 ```
 custom/ujust/
 ├── README.md          # This file
+├── autologin.just     # Autologin configuration commands (LUKS keyring unlock)
 ├── custom-apps.just   # Application installation commands
 └── custom-system.just # System configuration commands
 ```
 
 **Example Files in this directory:**
+- [`autologin.just`](autologin.just) - Autologin configuration with LUKS keyring unlock (enable/disable autologin, check status)
 - [`custom-apps.just`](custom-apps.just) - Application installation commands (Brewfiles, Flatpaks, JetBrains Toolbox)
 - [`custom-system.just`](custom-system.just) - System configuration commands (benchmarks, dev groups, maintenance)
 
