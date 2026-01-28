@@ -11,11 +11,13 @@
    - Injects it into gnome-keyring automatically
    - Source: https://git.sr.ht/~kennylevinsen/pam_fde_boot_pw
 
-2. **Updated PAM Configuration** - `/etc/pam.d/greetd` includes:
+2. **Updated PAM Configuration** - `/usr/lib/pam.d/greetd` includes:
    ```pam
    session    optional     /usr/lib/security/pam_fde_boot_pw.so inject_for=gkr
    session    optional     pam_gnome_keyring.so auto_start
    ```
+   
+   **Note**: PAM config is in `/usr/lib/pam.d/` (not `/etc/pam.d/`) to ensure bootc upgrades properly update it.
 
 ### What This Means for You
 
@@ -176,9 +178,10 @@ Installed via build scripts:
 
 Greetd uses TWO separate PAM services:
 
-1. **`/etc/pam.d/greetd`** - Authenticates the user through the greeter
+1. **`/usr/lib/pam.d/greetd`** - Authenticates the user through the greeter
    - Validates the password
    - Unlocks the keyring
+   - **Located in `/usr/lib/pam.d/` to ensure bootc upgrades update it**
    
 2. **`/usr/lib/pam.d/greetd-spawn`** - Spawns the user's session
    - Sets up session environment
@@ -206,6 +209,41 @@ This ensures the keyring daemon starts in the session environment with proper ac
 - [Arch Linux Wiki: GNOME Keyring PAM Integration](https://wiki.archlinux.org/title/GNOME/Keyring#PAM_integration) - See the FDE section if using full disk encryption
 
 ## Troubleshooting
+
+### PAM Config Not Updated After bootc Upgrade
+
+**Symptom:** After running `bootc upgrade`, your `/usr/lib/pam.d/greetd` doesn't match the repository, or you see the default Fedora greetd config with `substack system-auth` instead of our custom config.
+
+**Root Cause:** Older versions of this image placed the PAM config in `/etc/pam.d/greetd`. In bootc/ostree systems, `/etc` is persistent and doesn't get replaced during upgrades. If `/etc/pam.d/greetd` exists, PAM will use it instead of `/usr/lib/pam.d/greetd`.
+
+**Solution:**
+
+```bash
+# 1. Check if you have the old config in /etc
+ls -la /etc/pam.d/greetd
+
+# 2. If it exists, remove it (our config is in /usr/lib/pam.d/greetd now)
+sudo rm /etc/pam.d/greetd
+
+# 3. Verify the new config is being used
+cat /usr/lib/pam.d/greetd
+
+# 4. Should see our custom config with pam_fde_boot_pw.so
+grep "pam_fde_boot_pw" /usr/lib/pam.d/greetd
+
+# 5. Reboot for changes to take effect
+sudo reboot
+```
+
+After reboot, PAM will use `/usr/lib/pam.d/greetd` which includes the `pam_fde_boot_pw.so` module for automatic keyring unlock.
+
+**Why This Happened:**
+- Early builds: PAM config in `/etc/pam.d/greetd` (persistent, won't update)
+- Current builds: PAM config in `/usr/lib/pam.d/greetd` (immutable, updates with image)
+- Bootc 3-way merge: If `/etc/pam.d/greetd` exists, it takes precedence
+
+**For Fresh Installs:**
+This issue only affects systems that were deployed before the PAM config was moved to `/usr/lib/pam.d/`. Fresh installs will have the correct config automatically.
 
 ### LUKS FDE: Keyring Prompts After Login
 
@@ -251,12 +289,15 @@ This image includes `pam_fde_boot_pw.so` by default, which automatically injects
 
 **Verify it's working:**
 ```bash
-# Check if pam_fde_boot_pw is installed (should exist)
+# Check if pam_fde_boot_pw is installed (should exist in both locations)
 ls -la /usr/lib/security/pam_fde_boot_pw.so
+ls -la /usr/lib64/security/pam_fde_boot_pw.so  # On x86_64 systems
 
 # Check if it's in PAM config (should see inject_for=gkr)
-grep "pam_fde_boot_pw" /etc/pam.d/greetd
+grep "pam_fde_boot_pw" /usr/lib/pam.d/greetd
 ```
+
+**Note:** The build creates a symlink to ensure the module is accessible from both `/usr/lib/security/` and `/usr/lib64/security/` paths, regardless of which one meson uses for installation. On x86_64 systems, a symlink is created at `/usr/lib/security/pam_fde_boot_pw.so` pointing to the installed module in `/usr/lib64/security/`. On other architectures, the reverse symlink is created. This cross-architecture compatibility ensures PAM can find the module on all systems.
 
 **Alternative Option: Match Login Password to LUKS Password**
 - Change your user login password to match your LUKS password
@@ -292,9 +333,11 @@ If you can log in successfully but get prompted to unlock the keyring when an ap
 
 1. **Check PAM configuration**:
    ```bash
-   cat /etc/pam.d/greetd
+   cat /usr/lib/pam.d/greetd
    ```
    Verify the order matches the fixed configuration above
+   
+   **Note**: If you see a different config, check `/etc/pam.d/greetd` - if it exists, it takes precedence over `/usr/lib/pam.d/greetd` and should be removed.
 
 2. **Check greetd-spawn PAM configuration**:
    ```bash
@@ -306,192 +349,6 @@ If you can log in successfully but get prompted to unlock the keyring when an ap
    account    include      greetd
    session    required     pam_env.so conffile=/usr/share/greetd/greetd-spawn.pam_env.conf
    session    include      greetd
-   session    optional     pam_gnome_keyring.so auto_start
-   ```
-   **CRITICAL**: `pam_env.so` must be in the session phase, NOT the auth phase.
-
-3. **Verify gnome-keyring-pam is installed**:
-   ```bash
-   rpm -q gnome-keyring-pam
-   ```
-
-4. **Check that systemd is NOT starting the daemon**:
-   ```bash
-   systemctl --user is-enabled gnome-keyring-daemon.service 2>/dev/null
-   # Should show: "disabled" or "Failed to get unit file state"
-   ```
-
-5. **Reset the keyring** (last resort):
-   ```bash
-   rm -rf ~/.local/share/keyrings/
-   ```
-   Then log out and log back in
-
-### Keyring Password Mismatch
-
-If you changed your login password but not your keyring password:
-```bash
-# Delete and recreate keyring
-rm -rf ~/.local/share/keyrings/
-# Log out and log back in - keyring will sync with new password
-```
-
-## Full Disk Encryption (FDE) Support
-
-### Good News: `pam_fde_boot_pw.so` is Already Installed!
-
-**This image includes automatic LUKS keyring unlock out of the box.**
-
-The `pam_fde_boot_pw.so` module is compiled and installed during the image build process. No additional setup required!
-
-### What This Means for LUKS Users
-
-**If your LUKS password = Login password:**
-- ✅ Keyring unlocks automatically
-- ✅ No additional configuration needed
-- ✅ Just reset your keyring if needed: `rm -rf ~/.local/share/keyrings/`
-
-**If your LUKS password ≠ Login password:**
-- ✅ **pam_fde_boot_pw.so is already installed and configured!**
-- ✅ Just reset your keyring: `rm -rf ~/.local/share/keyrings/`
-- ✅ Log out and log back in
-- ✅ Keyring will be created with your LUKS password automatically
-
-### How It Works
-
-`pam_fde_boot_pw.so` is a specialized PAM module that:
-- Retrieves the disk decryption password from systemd
-- Injects it into GNOME Keyring using `inject_for=gkr` parameter
-- Allows automatic keyring unlock using the LUKS password
-- Works seamlessly with greetd and PAM
-
-**Current Behavior (With This Image):**
-1. 🔓 You enter LUKS password at boot → Disk decrypts → systemd captures password
-2. 🚪 You enter login password at greeter → You log in
-3. 🔑 `pam_fde_boot_pw.so` retrieves LUKS password from systemd
-4. 🔓 GNOME Keyring unlocks automatically with LUKS password
-5. ✅ No password prompt!
-
-### LUKS Full Disk Encryption - Technical Details
-
-**Understanding the Problem (Without pam_fde_boot_pw):**
-- LUKS password is captured by systemd during boot
-- But it's not automatically passed to gnome-keyring
-- `pam_gnome_keyring.so` only captures the **login** password
-- If your LUKS password ≠ login password, keyring won't unlock
-
-**The Solution (Already Implemented in This Image):**
-
-This image includes `pam_fde_boot_pw.so` which:
-1. Retrieves the LUKS password from systemd
-2. Injects it into gnome-keyring
-3. Enables automatic unlock even when LUKS password ≠ login password
-
-**Verification:**
-
-Check that everything is installed and configured:
-
-```bash
-# Verify pam_fde_boot_pw is installed
-ls -la /usr/lib/security/pam_fde_boot_pw.so
-
-# Verify PAM configuration
-grep "pam_fde_boot_pw" /etc/pam.d/greetd
-
-# Check systemd in initrd (should see files)
-ls /usr/lib/systemd/system/initrd*
-```
-
-Fedora and bootc-based systems typically use systemd in initrd by default.
-
-### Manual Installation (For Other Systems)
-
-**Note**: This section is for reference only. This image already includes pam_fde_boot_pw.
-
-If you need to install pam_fde_boot_pw on another system:
-
-**Source**: https://git.sr.ht/~kennylevinsen/pam_fde_boot_pw
-
-```bash
-# Install build dependencies
-dnf install -y meson ninja-build pam-devel systemd-devel keyutils-libs-devel
-
-# Download and build
-git clone https://git.sr.ht/~kennylevinsen/pam_fde_boot_pw
-cd pam_fde_boot_pw
-meson setup build
-ninja -C build
-sudo ninja -C build install
-```
-
-This installs the module to `/usr/lib/security/pam_fde_boot_pw.so`
-
-**Update PAM configuration:**
-
-Modify `/etc/pam.d/greetd` to add pam_fde_boot_pw BEFORE gnome-keyring:
-
-```pam
-#%PAM-1.0
-# PAM configuration for greetd with LUKS FDE support
-
-# Authentication
-auth       include      system-login
-auth       optional     pam_gnome_keyring.so
-
-# Account validation
-account    include      system-login
-
-# Password management
-password   optional     pam_gnome_keyring.so
-password   include      system-login
-
-# Session management
-session    include      system-login
-session    optional     /usr/lib/security/pam_fde_boot_pw.so inject_for=gkr
-session    optional     pam_gnome_keyring.so auto_start
-```
-
-**CRITICAL:** `pam_fde_boot_pw.so` MUST come BEFORE `pam_gnome_keyring.so` in the session phase!
-
-### Building pam_fde_boot_pw in a bootc Image
-
-**Note**: This image already includes pam_fde_boot_pw via `build/25-pam-fde.sh`. This section is for reference.
-
-The build script (`build/25-pam-fde.sh`) compiles and installs pam_fde_boot_pw during image build:
-
-```bash
-#!/usr/bin/bash
-
-set -eoux pipefail
-
-echo "::group:: Build and Install pam_fde_boot_pw"
-
-# Install build dependencies
-dnf5 install -y \
-    git \
-    meson \
-    ninja-build \
-    pam-devel \
-    systemd-devel \
-    keyutils-libs-devel
-
-# Clone and build
-cd /tmp
-git clone https://git.sr.ht/~kennylevinsen/pam_fde_boot_pw
-cd pam_fde_boot_pw
-meson setup build
-ninja -C build
-ninja -C build install
-
-# Clean up build artifacts
-cd /
-rm -rf /tmp/pam_fde_boot_pw
-
-# Remove build-only dependencies (keep runtime deps)
-dnf5 remove -y \
-    git \
-    meson \
-    ninja-build \
     pam-devel \
     systemd-devel \
     keyutils-libs-devel
@@ -499,7 +356,9 @@ dnf5 remove -y \
 echo "::endgroup::"
 ```
 
-The PAM configuration in `custom/system_files/etc/pam.d/greetd` includes the module.
+The PAM configuration in `custom/system_files/usr/lib/pam.d/greetd` includes the module.
+
+**Important**: The config is in `/usr/lib/pam.d/` (not `/etc/pam.d/`) because in bootc/ostree systems, `/etc` is persistent and doesn't get updated on `bootc upgrade`. Using `/usr/lib/pam.d/` ensures the config updates with the image.
 
 ### Alternative: Use Login Password for Keyring
 
