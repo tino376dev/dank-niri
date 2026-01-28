@@ -63,47 +63,75 @@ auth    include     system-login
 
 **Problem**: The keyring module ran BEFORE `system-login`, so it didn't have access to the validated password.
 
-### The Current Configuration (Standard PAM Integration)
+### The Current Configuration (Fedora-Specific)
+
+**CRITICAL**: On Fedora, greetd must use `system-auth`, not `system-login`.
+
+- **system-login** = For local console logins (getty, login command)
+- **system-auth** = For authentication services (display managers, sshd, sudo)
+
+Since greetd is a display manager greeter, it uses `system-auth`:
 
 ```pam
 # Authentication
-auth       include      system-login
+auth       substack     system-auth
 auth       optional     pam_gnome_keyring.so
+auth       include      postlogin
+
+# Account validation
+account    required     pam_nologin.so
+account    include      system-auth
 
 # Password management
 password   optional     pam_gnome_keyring.so
-password   include      system-login
+password   include      system-auth
 
 # Session management
-session    include      system-login
+session    required     pam_selinux.so close
+session    required     pam_loginuid.so
+session    optional     pam_keyinit.so force revoke
+session    include      system-auth
+session    required     pam_selinux.so open
 session    optional     pam_gnome_keyring.so auto_start
+session    include      postlogin
 ```
 
 **Why This Works**:
 
 1. **Auth Phase**:
-   - `system-login` validates the password first
+   - `system-auth` validates the password first (using `substack` for proper error handling)
    - `pam_gnome_keyring.so` captures the validated password to unlock the keyring
+   - `postlogin` handles post-authentication tasks
 
-2. **Password Phase**:
-   - Added `pam_gnome_keyring.so` to update keyring password when user changes login password
+2. **Account Phase**:
+   - `pam_nologin.so` checks if logins are allowed
+   - `system-auth` performs account validation
+
+3. **Password Phase**:
+   - `pam_gnome_keyring.so` updates keyring password when user changes login password
    - This keeps the keyring password in sync with the login password
 
-3. **Session Phase**:
-   - `system-login` sets up the session
-   - `pam_gnome_keyring.so auto_start` ensures the keyring daemon starts and unlocks
+4. **Session Phase**:
+   - `pam_selinux.so close` - Prepares SELinux context transition
+   - `pam_loginuid.so` - Sets audit UID
+   - `pam_keyinit.so` - Initializes kernel keyring
+   - `system-auth` - Sets up session (includes pam_systemd, limits, etc.)
+   - `pam_selinux.so open` - Sets SELinux context for new session
+   - `pam_gnome_keyring.so auto_start` - Starts and unlocks gnome-keyring
+   - `postlogin` - Post-session setup tasks
 
 ## How GNOME Keyring Auto-Unlock Works
 
 ### For Standard Login
 
 1. User enters password at greeter
-2. PAM `system-login` validates the password against the system
+2. PAM `system-auth` validates the password against the system
 3. If validation succeeds, `pam_gnome_keyring.so` receives the password
 4. The keyring module attempts to unlock the default keyring using this password
 5. If the keyring password matches the login password, the keyring unlocks automatically
-6. Session starts with `pam_gnome_keyring.so auto_start` launching the daemon
-7. User's session has an unlocked keyring, no additional prompts needed
+6. Session starts with all required modules (`pam_selinux`, `pam_loginuid`, `pam_systemd`, etc.)
+7. `pam_gnome_keyring.so auto_start` launches the daemon with unlocked keyring
+8. User's session has an unlocked keyring, no additional prompts needed
 
 ### For LUKS Encrypted Systems
 

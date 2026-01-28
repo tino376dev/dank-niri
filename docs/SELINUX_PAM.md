@@ -8,91 +8,109 @@
 
 ### PAM Include Directive
 
-When we use `include system-login` in our greetd PAM configuration, we inherit **all** modules from Fedora's `/usr/lib/pam.d/system-login` file, including SELinux-related modules.
+When we use `include system-auth` in our greetd PAM configuration, we inherit **all** modules from Fedora's `/usr/lib/pam.d/system-auth` file, including SELinux-related modules.
 
-### Typical Fedora system-login Structure
+**CRITICAL**: greetd uses `system-auth`, not `system-login`:
+- **system-auth** = For authentication services (display managers, sshd, sudo)
+- **system-login** = For local console logins (getty, login command)
 
-Fedora's `/usr/lib/pam.d/system-login` includes critical SELinux modules:
+### Typical Fedora system-auth Structure
+
+Fedora's `/usr/lib/pam.d/system-auth` includes critical SELinux modules:
 
 ```pam
 auth       required   pam_env.so
 auth       required   pam_faildelay.so
 auth       sufficient pam_fprintd.so
-auth       include    system-auth
-account    required   pam_nologin.so
-account    include    system-auth
-password   include    system-auth
-session    optional   pam_keyinit.so force revoke
+auth       sufficient pam_unix.so try_first_pass nullok
+auth       required   pam_deny.so
+
+account    required   pam_unix.so
+account    sufficient pam_localuser.so
+account    sufficient pam_succeed_if.so uid < 1000 quiet
+account    required   pam_permit.so
+
+password   requisite  pam_pwquality.so try_first_pass local_users_only retry=3
+password   sufficient pam_unix.so try_first_pass use_authtok nullok sha512 shadow
+password   required   pam_deny.so
+
+session    optional   pam_keyinit.so revoke
 session    required   pam_limits.so
-session    required   pam_selinux.so close    # ← CRITICAL: Close SELinux session
-session    required   pam_loginuid.so
+session    [success=1 default=ignore] pam_succeed_if.so service in crond quiet use_uid
+session    required   pam_unix.so
 session    optional   pam_systemd.so
-session    include    system-auth
-session    required   pam_selinux.so open     # ← CRITICAL: Open SELinux session with proper context
-session    optional   pam_env.so user_readenv=1
 ```
+
+Note: SELinux modules (`pam_selinux.so close/open`) are typically in the service-specific PAM file (like greetd), not in `system-auth` itself.
 
 ### Our greetd PAM Configuration
 
 ```pam
 #%PAM-1.0
-# PAM configuration for greetd
-# GNOME Keyring integration with LUKS FDE support
+# PAM configuration for greetd on Fedora
+# Uses system-auth (for display managers) not system-login (for console)
 
 # Authentication
-auth       include      system-login
+auth       substack     system-auth
 auth       optional     pam_gnome_keyring.so
+auth       include      postlogin
 
 # Account validation
-account    include      system-login
+account    required     pam_nologin.so
+account    include      system-auth
 
 # Password management
 password   optional     pam_gnome_keyring.so
-password   include      system-login
+password   include      system-auth
 
 # Session management
-session    include      system-login   # ← Includes pam_selinux.so close/open
-session    optional     /usr/lib/security/pam_fde_boot_pw.so inject_for=gkr
+session    required     pam_selinux.so close
+session    required     pam_loginuid.so
+session    optional     pam_keyinit.so force revoke
+session    include      system-auth
+session    required     pam_selinux.so open
 session    optional     pam_gnome_keyring.so auto_start
+session    include      postlogin
 ```
 
 ### Execution Order (Session Phase)
 
 When a user logs in, PAM executes session modules in this order:
 
-1. **`session include system-login`** runs, which executes:
-   - `pam_selinux.so close` - Prepare to close old SELinux context
-   - `pam_loginuid.so` - Set login UID
+1. **`session required pam_selinux.so close`** - Prepare SELinux context transition
+2. **`session required pam_loginuid.so`** - Set audit login UID
+3. **`session optional pam_keyinit.so force revoke`** - Initialize kernel keyring
+4. **`session include system-auth`** runs, which executes:
+   - `pam_keyinit.so revoke` - Manage kernel keyring
+   - `pam_limits.so` - Set resource limits
+   - `pam_unix.so` - Unix session setup
    - `pam_systemd.so` - Register with systemd
-   - Other modules from system-auth
-   - **`pam_selinux.so open`** - Set SELinux context for new session
+5. **`session required pam_selinux.so open`** - Set SELinux context for new session
    
-2. **`session optional pam_fde_boot_pw.so inject_for=gkr`** runs:
-   - Retrieves LUKS password from systemd
-   - Injects it for gnome-keyring
-   - **Runs with correct SELinux context** (already set by step 1)
-   
-3. **`session optional pam_gnome_keyring.so auto_start`** runs:
+2. **`session optional pam_gnome_keyring.so auto_start`** runs:
    - Starts gnome-keyring-daemon
    - Unlocks the keyring with the password
-   - **Runs with correct SELinux context** (already set by step 1)
+   - **Runs with correct SELinux context** (already set by step 5)
+   
+3. **`session include postlogin`** runs:
+   - Post-session setup tasks
 
 ## Why This Is Correct
 
 1. **SELinux context is set BEFORE our custom modules run**
-   - `pam_selinux.so open` runs inside `include system-login`
-   - Our modules (`pam_fde_boot_pw`, `pam_gnome_keyring`) run AFTER
+   - `pam_selinux.so open` runs AFTER `system-auth` setup
+   - Our modules (`pam_gnome_keyring`) run AFTER SELinux context is set
    - They inherit the correct SELinux context
 
 2. **Our modules are `optional`**
    - If they fail, login still succeeds
-   - If SELinux setup fails (in `system-login`), login fails immediately
+   - If SELinux setup fails, login fails immediately (pam_selinux.so is `required`)
    - This prevents insecure sessions
 
-3. **SELinux contexts for PAM modules themselves**
-   - PAM modules in `/usr/lib/security/` or `/usr/lib64/security/` get proper contexts
-   - `restorecon` is run during build to ensure correct labels
-   - At runtime, the system verifies these contexts
+3. **SELinux modules are explicitly placed**
+   - `pam_selinux.so close` runs early to prepare context transition
+   - `pam_selinux.so open` runs late to set final context
+   - This is the standard Fedora pattern for display managers
 
 ## SELinux Context Restoration
 
