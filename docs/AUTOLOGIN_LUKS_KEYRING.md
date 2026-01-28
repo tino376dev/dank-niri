@@ -53,7 +53,32 @@ rm -rf ~/.local/share/keyrings/
 
 ## Enabling Autologin
 
-### Step 1: Configure Greetd for Autologin
+### Quick Method: Using ujust Commands
+
+The easiest way to enable autologin is using the provided ujust commands:
+
+```bash
+# Enable autologin for your user
+ujust enable-autologin yourusername
+
+# Check autologin status
+ujust autologin-status
+
+# Disable autologin (restore normal greeter)
+ujust disable-autologin
+```
+
+The `enable-autologin` command will:
+- Backup your existing greetd and PAM configurations
+- Configure greetd for autologin
+- Install the PAM configuration for keyring unlock
+- Provide helpful instructions
+
+### Manual Method: Step-by-Step Configuration
+
+If you prefer to configure manually or want to understand what's happening:
+
+#### Step 1: Configure Greetd for Autologin
 
 Edit the greetd configuration:
 
@@ -78,7 +103,7 @@ sudo micro /usr/share/doc/dank-niri/config.toml.autologin
 sudo cp /usr/share/doc/dank-niri/config.toml.autologin /etc/greetd/config.toml
 ```
 
-### Step 2: Enable PAM Configuration for Autologin
+#### Step 2: Enable PAM Configuration for Autologin
 
 Replace the default PAM configuration with the autologin version:
 
@@ -92,7 +117,7 @@ This PAM configuration:
 - Unlocks the GNOME keyring with that password
 - Starts the session with the keyring unlocked
 
-### Step 3: Reboot
+#### Step 3: Reboot
 
 ```bash
 sudo reboot
