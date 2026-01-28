@@ -15,5 +15,5 @@ password   include      system-login
 
 # Session management
 session    include      system-login
-session    optional     /usr/local/lib/security/pam_fde_boot_pw.so inject_for=gkr
+session    optional     pam_fde_boot_pw.so inject_for=gkr
 session    optional     pam_gnome_keyring.so auto_start

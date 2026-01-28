@@ -29,21 +29,19 @@ git clone https://git.sr.ht/~kennylevinsen/pam_fde_boot_pw
 cd pam_fde_boot_pw
 
 # Build and install
-meson setup build
+# Use --prefix=/usr to install to /usr/lib/security instead of /usr/local/lib/security
+# This avoids issues with /usr/local being a symlink in ostree/bootc systems
+meson setup build --prefix=/usr
 ninja -C build
-
-# Create target directory for installation
-mkdir -p /usr/local/lib/security
-
 ninja -C build install
 
 # Verify installation
-if [ ! -f /usr/local/lib/security/pam_fde_boot_pw.so ]; then
+if [ ! -f /usr/lib/security/pam_fde_boot_pw.so ]; then
     echo "ERROR: pam_fde_boot_pw.so was not installed correctly"
     exit 1
 fi
 
-echo "pam_fde_boot_pw.so installed successfully to /usr/local/lib/security/"
+echo "pam_fde_boot_pw.so installed successfully to /usr/lib/security/"
 
 # Clean up build artifacts
 cd /

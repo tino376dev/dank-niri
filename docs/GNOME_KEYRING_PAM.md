@@ -13,7 +13,7 @@
 
 2. **Updated PAM Configuration** - `/etc/pam.d/greetd` includes:
    ```pam
-   session    optional     /usr/local/lib/security/pam_fde_boot_pw.so inject_for=gkr
+   session    optional     /usr/lib/security/pam_fde_boot_pw.so inject_for=gkr
    session    optional     pam_gnome_keyring.so auto_start
    ```
 
@@ -78,7 +78,7 @@ password   include      system-login
 
 # Session management
 session    include      system-login
-session    optional     /usr/local/lib/security/pam_fde_boot_pw.so inject_for=gkr
+session    optional     /usr/lib/security/pam_fde_boot_pw.so inject_for=gkr
 session    optional     pam_gnome_keyring.so auto_start
 ```
 
@@ -252,7 +252,7 @@ This image includes `pam_fde_boot_pw.so` by default, which automatically injects
 **Verify it's working:**
 ```bash
 # Check if pam_fde_boot_pw is installed (should exist)
-ls -la /usr/local/lib/security/pam_fde_boot_pw.so
+ls -la /usr/lib/security/pam_fde_boot_pw.so
 
 # Check if it's in PAM config (should see inject_for=gkr)
 grep "pam_fde_boot_pw" /etc/pam.d/greetd
@@ -393,7 +393,7 @@ Check that everything is installed and configured:
 
 ```bash
 # Verify pam_fde_boot_pw is installed
-ls -la /usr/local/lib/security/pam_fde_boot_pw.so
+ls -la /usr/lib/security/pam_fde_boot_pw.so
 
 # Verify PAM configuration
 grep "pam_fde_boot_pw" /etc/pam.d/greetd
@@ -424,7 +424,7 @@ ninja -C build
 sudo ninja -C build install
 ```
 
-This installs the module to `/usr/local/lib/security/pam_fde_boot_pw.so`
+This installs the module to `/usr/lib/security/pam_fde_boot_pw.so`
 
 **Update PAM configuration:**
 
@@ -447,7 +447,7 @@ password   include      system-login
 
 # Session management
 session    include      system-login
-session    optional     /usr/local/lib/security/pam_fde_boot_pw.so inject_for=gkr
+session    optional     /usr/lib/security/pam_fde_boot_pw.so inject_for=gkr
 session    optional     pam_gnome_keyring.so auto_start
 ```
 
