@@ -146,6 +146,7 @@ This ensures the keyring daemon starts in the session environment with proper ac
 - [PAM Configuration Documentation](https://linux.die.net/man/5/pam.conf)
 - [pam_gnome_keyring Manual](https://linux.die.net/man/8/pam_gnome_keyring)
 - [Arch Linux Wiki: GNOME Keyring](https://wiki.archlinux.org/title/GNOME/Keyring)
+- [Arch Linux Wiki: GNOME Keyring PAM Integration](https://wiki.archlinux.org/title/GNOME/Keyring#PAM_integration) - See the FDE section if using full disk encryption
 
 ## Troubleshooting
 
@@ -220,6 +221,46 @@ If you changed your login password but not your keyring password:
 rm -rf ~/.local/share/keyrings/
 # Log out and log back in - keyring will sync with new password
 ```
+
+## Full Disk Encryption (FDE) Considerations
+
+### Do You Need `pam_fde_boot_pw.so`?
+
+**Short Answer: NO** - Not needed for standard greetd/gnome-keyring setup.
+
+`pam_fde_boot_pw.so` is a specialized PAM module that:
+- **Only applies to Full Disk Encryption (FDE) setups** (e.g., LUKS encrypted root)
+- Injects the disk decryption password into GNOME Keyring
+- Uses `inject_for=gkr` parameter to target GNOME Keyring (or `inject_for=kwallet5` for KDE)
+- Allows automatic keyring unlock using the FDE password instead of login password
+
+### When `pam_fde_boot_pw.so` IS Needed
+
+You need this module **ONLY IF**:
+1. Your root filesystem is encrypted (LUKS, dm-crypt, etc.)
+2. You want the disk decryption password to unlock the keyring
+3. Your disk password differs from your login password
+
+**Example FDE PAM config** (from Arch Wiki):
+```pam
+auth       required     pam_fde_boot_pw.so inject_for=gkr
+auth       optional     pam_gnome_keyring.so
+```
+
+### Why It's NOT Needed Here
+
+This bootc image setup uses:
+- **Standard login password authentication** via greetd
+- `pam_gnome_keyring.so` to capture the login password
+- No FDE password injection required
+
+If you're using full disk encryption on your deployment, the bootc upgrade process handles this at the system level, not the PAM level.
+
+### If You Have FDE and Still See Keyring Prompts
+
+1. Ensure your keyring password matches your login password (not the disk password)
+2. Or implement `pam_fde_boot_pw.so` to use the disk password for keyring unlock
+3. See the [Arch Wiki GNOME/Keyring](https://wiki.archlinux.org/title/GNOME/Keyring#PAM_integration) for FDE-specific configuration
 
 ## Security Considerations
 
