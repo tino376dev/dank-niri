@@ -46,8 +46,8 @@ cd /
 rm -rf /tmp/pam_fde_boot_pw
 
 # Remove build-only dependencies (keep runtime deps: pam, systemd, keyutils-libs)
+# Note: We don't remove 'git' as it may be preinstalled in the base image
 dnf5 remove -y \
-    git \
     meson \
     ninja-build \
     pam-devel \
