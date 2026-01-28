@@ -129,8 +129,14 @@ Greetd uses TWO separate PAM services:
 
 Both services need the gnome-keyring configuration. The `greetd-spawn` service requires:
 ```pam
+auth       include      greetd
+account    include      greetd
+session    required     pam_env.so conffile=/usr/share/greetd/greetd-spawn.pam_env.conf
+session    include      greetd
 session    optional     pam_gnome_keyring.so auto_start
 ```
+
+**CRITICAL**: The `pam_env.so` must be in the **session** phase, not the auth phase. This ensures environment variables (like `XDG_SESSION_TYPE=wayland`) are set correctly when the session starts, which is required for proper gnome-keyring initialization.
 
 This ensures the keyring daemon starts in the session environment with proper access to the unlocked keyring.
 
@@ -181,8 +187,13 @@ If you can log in successfully but get prompted to unlock the keyring when an ap
    ```
    Verify it contains:
    ```
+   auth       include      greetd
+   account    include      greetd
+   session    required     pam_env.so conffile=/usr/share/greetd/greetd-spawn.pam_env.conf
+   session    include      greetd
    session    optional     pam_gnome_keyring.so auto_start
    ```
+   **CRITICAL**: `pam_env.so` must be in the session phase, NOT the auth phase.
 
 3. **Verify gnome-keyring-pam is installed**:
    ```bash
