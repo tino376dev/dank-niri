@@ -30,6 +30,12 @@ if [ -z "${PAM_USER:-}" ]; then
     exit 0  # Exit 0 to not block login
 fi
 
+# Validate PAM_USER to prevent path traversal
+if [[ ! "${PAM_USER}" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+    log_error "Invalid PAM_USER format: $PAM_USER"
+    exit 0  # Exit 0 to not block login
+fi
+
 log "Attempting to unlock keyring for user: $PAM_USER"
 
 # Try to find the LUKS password in the kernel keyring
@@ -47,29 +53,6 @@ for KEY_DESC in "${KEY_DESCRIPTIONS[@]}"; do
         break
     fi
 done
-
-# If we couldn't find the password, try alternative methods
-if [ -z "$PASSWORD" ]; then
-    # List available keys for debugging
-    log "Could not find LUKS password in kernel keyring, trying alternative keys"
-    
-    # Try to find any key that might contain the password
-    # This is more permissive and will try all user keys
-    KEYRING_KEYS=$(keyctl list @u 2>/dev/null | grep -oP '\d+' || true)
-    
-    for KEY_ID in $KEYRING_KEYS; do
-        # Try to read each key
-        if TEMP_PASS=$(keyctl pipe "$KEY_ID" 2>/dev/null); then
-            # Basic sanity check - password should be reasonable length
-            PASS_LEN=${#TEMP_PASS}
-            if [ "$PASS_LEN" -ge 4 ] && [ "$PASS_LEN" -le 256 ]; then
-                PASSWORD="$TEMP_PASS"
-                log "Found potential password in key ID: $KEY_ID"
-                break
-            fi
-        fi
-    done
-fi
 
 # If still no password found, exit gracefully
 if [ -z "$PASSWORD" ]; then
@@ -89,6 +72,9 @@ fi
 
 # Use echo to pipe password to gnome-keyring-daemon
 # This unlocks the keyring without prompting
+# NOTE: The password may be briefly visible in process listings, but this is
+# unavoidable with gnome-keyring-daemon's --unlock interface. The exposure
+# window is minimal as the process completes quickly.
 if echo -n "$PASSWORD" | gnome-keyring-daemon --unlock 2>&1 | systemd-cat -t unlock-gnome-keyring-luks -p debug; then
     log "Successfully unlocked GNOME keyring for user $PAM_USER"
 else

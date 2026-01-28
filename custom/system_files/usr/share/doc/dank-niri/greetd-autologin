@@ -26,7 +26,9 @@ auth       include      postlogin
 account    required     pam_nologin.so
 account    include      system-auth
 
-# Password management - not used in autologin
+# Password management
+# Note: This section is included for completeness but won't be invoked during
+# autologin since password changes require authentication
 password   include      system-auth
 
 # Session management

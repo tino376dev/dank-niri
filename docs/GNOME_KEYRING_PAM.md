@@ -29,11 +29,12 @@ session    optional     pam_gnome_keyring.so auto_start
 If you're logging in for the first time or changed your password, reset your keyring:
 
 ```bash
-# Delete the old keyring
+# CAUTION: This deletes your existing keyring!
+# Export passwords from your browser/apps first if needed
 rm -rf ~/.local/share/keyrings/
 
 # Log out and log back in
-# Keyring will be created automatically with your current login password
+# A new keyring will be created automatically with your current login password
 ```
 
 For additional troubleshooting, see sections below.

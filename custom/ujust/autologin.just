@@ -40,23 +40,26 @@ enable-autologin USERNAME:
     
     # Create greetd config with autologin
     echo "Creating greetd configuration for autologin..."
-    sudo tee /etc/greetd/config.toml > /dev/null << EOF
-    [general]
-    service = "greetd-spawn"
+    sudo tee /etc/greetd/config.toml > /dev/null << 'EOF'
+[general]
+service = "greetd-spawn"
+
+[terminal]
+vt = 1
+
+# Default session (fallback if autologin fails)
+[default_session]
+command = "dms-greeter --command niri"
+user = "greeter"
+
+# Autologin session
+[initial_session]
+user = {{USERNAME}}
+command = "niri"
+EOF
     
-    [terminal]
-    vt = 1
-    
-    # Default session (fallback if autologin fails)
-    [default_session]
-    command = "dms-greeter --command niri"
-    user = "greeter"
-    
-    # Autologin session
-    [initial_session]
-    user = "{{USERNAME}}"
-    command = "niri"
-    EOF
+    # Replace the placeholder with actual username
+    sudo sed -i "s/{{USERNAME}}/{{USERNAME}}/g" /etc/greetd/config.toml
     
     # Copy PAM config for autologin
     echo "Installing PAM configuration for autologin with keyring unlock..."
