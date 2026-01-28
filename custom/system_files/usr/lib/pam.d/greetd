@@ -1,6 +1,6 @@
 #%PAM-1.0
-# PAM configuration for greetd with LUKS FDE support
-# This file enables authentication and session management for the greetd greeter
+# PAM configuration for greetd
+# Basic GNOME Keyring integration without LUKS FDE support
 
 # Authentication
 auth       include      system-login
@@ -15,5 +15,4 @@ password   include      system-login
 
 # Session management
 session    include      system-login
-session    optional     pam_fde_boot_pw.so inject_for=gkr
 session    optional     pam_gnome_keyring.so auto_start

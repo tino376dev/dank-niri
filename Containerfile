@@ -82,7 +82,6 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=tmpfs,dst=/tmp \
     /ctx/build/10-build.sh && \
     /ctx/build/20-terra.sh && \
-    /ctx/build/25-pam-fde.sh && \
     /ctx/build/30-dank-niri.sh && \
     /ctx/build/40-microsoft-app.sh
     
