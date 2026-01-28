@@ -1,5 +1,46 @@
 # GNOME Keyring PAM Configuration for Greetd
 
+## LUKS FDE Support (Enabled by Default)
+
+**Good news!** This image now includes automatic GNOME Keyring unlock for LUKS encrypted systems out of the box.
+
+### What's Included
+
+1. **pam_fde_boot_pw.so** - Compiled and installed during image build
+   - Retrieves LUKS password from systemd
+   - Injects it into gnome-keyring automatically
+   - Source: https://git.sr.ht/~kennylevinsen/pam_fde_boot_pw
+
+2. **Updated PAM Configuration** - `/etc/pam.d/greetd` includes:
+   ```pam
+   session    optional     /usr/lib/security/pam_fde_boot_pw.so inject_for=gkr
+   session    optional     pam_gnome_keyring.so auto_start
+   ```
+
+### What This Means for You
+
+- ✅ **LUKS users**: Keyring unlocks automatically with your LUKS password
+- ✅ **Non-LUKS users**: Standard PAM keyring unlock works as before
+- ✅ **No additional setup**: Everything works out of the box
+
+### If You Still Get Keyring Prompts
+
+**First-time users or password changes:**
+
+If you're logging in for the first time or changed your password, reset your keyring:
+
+```bash
+# Delete the old keyring
+rm -rf ~/.local/share/keyrings/
+
+# Log out and log back in
+# Keyring will be created automatically with your current password
+```
+
+For additional troubleshooting, see sections below.
+
+---
+
 ## Problem Statement
 
 When logging in through greetd with dms-greeter, users were being prompted to unlock the GNOME keyring despite having successfully authenticated. This creates a poor user experience as users have to enter their password twice - once at the greeter and again to unlock the keyring.
@@ -24,7 +65,7 @@ auth    include     system-login
 
 **Problem**: The keyring module ran BEFORE `system-login`, so it didn't have access to the validated password.
 
-### The Fixed Configuration
+### The Current Configuration (with LUKS FDE Support)
 
 ```pam
 # Authentication
@@ -37,6 +78,7 @@ password   include      system-login
 
 # Session management
 session    include      system-login
+session    optional     /usr/lib/security/pam_fde_boot_pw.so inject_for=gkr
 session    optional     pam_gnome_keyring.so auto_start
 ```
 
@@ -52,9 +94,12 @@ session    optional     pam_gnome_keyring.so auto_start
 
 3. **Session Phase**:
    - `system-login` sets up the session
+   - **`pam_fde_boot_pw.so`** retrieves LUKS password from systemd (if present) and injects it
    - `pam_gnome_keyring.so auto_start` ensures the keyring daemon starts and unlocks
 
 ## How GNOME Keyring Auto-Unlock Works
+
+### For Non-LUKS Systems (Standard Login)
 
 1. User enters password at greeter
 2. PAM `system-login` validates the password against the system
@@ -63,6 +108,18 @@ session    optional     pam_gnome_keyring.so auto_start
 5. If the keyring password matches the login password, the keyring unlocks automatically
 6. Session starts with `pam_gnome_keyring.so auto_start` launching the daemon
 7. User's session has an unlocked keyring, no additional prompts needed
+
+### For LUKS Encrypted Systems (FDE)
+
+1. User enters LUKS password at boot → systemd captures it in memory
+2. User enters login password at greeter → PAM validates
+3. **`pam_fde_boot_pw.so`** retrieves the LUKS password from systemd
+4. LUKS password is injected into gnome-keyring as the unlock password
+5. If the keyring was created with the LUKS password, it unlocks automatically
+6. Session starts with `pam_gnome_keyring.so auto_start` launching the daemon
+7. User's session has an unlocked keyring, no additional prompts needed
+
+**Note**: For LUKS systems, the keyring password should match the LUKS password for automatic unlock to work.
 
 ## Important Notes
 
@@ -107,11 +164,11 @@ This PAM configuration works in conjunction with:
 - **gnome-keyring**: The keyring daemon and storage
 - **greetd**: The display manager service
 - **dms-greeter**: The greeter interface
+- **pam_fde_boot_pw**: Provides LUKS password injection for FDE systems
 
-Installed via build script (`build/30-dank-niri.sh`):
-```bash
-dnf install -y gnome-keyring-pam
-```
+Installed via build scripts:
+- `build/10-build.sh`: Installs `gnome-keyring-pam` package
+- `build/25-pam-fde.sh`: Compiles and installs `pam_fde_boot_pw.so` to `/usr/local/lib/security/`
 
 **CRITICAL**: The gnome-keyring daemon is started by PAM's `auto_start` flag, NOT by systemd. Enabling `gnome-keyring-daemon.service` via systemd creates a race condition where the daemon starts in a locked state before PAM can unlock it with the user's password.
 
@@ -180,29 +237,32 @@ After this:
 
 **If Your LUKS Password ≠ Login Password:**
 
-**Option 1: Implement pam_fde_boot_pw (Recommended for LUKS)**
-- Follow the "LUKS Full Disk Encryption Setup" section below
-- Builds and installs the pam_fde_boot_pw module
-- Automatically injects LUKS password into keyring
-- Requires systemd in initrd (usually already present in Fedora/bootc)
+**Good News: pam_fde_boot_pw is Already Installed!**
 
-**Option 2: Match Login Password to LUKS Password**
+This image includes `pam_fde_boot_pw.so` by default, which automatically injects your LUKS password into gnome-keyring. No additional installation needed!
+
+**To use it:**
+1. **Reset your keyring** (if it was created with the wrong password):
+   ```bash
+   rm -rf ~/.local/share/keyrings/
+   ```
+2. **Log out and log back in**
+3. The keyring will be created and unlocked with your LUKS password automatically
+
+**Verify it's working:**
+```bash
+# Check if pam_fde_boot_pw is installed (should exist)
+ls -la /usr/lib/security/pam_fde_boot_pw.so
+
+# Check if it's in PAM config (should see inject_for=gkr)
+grep "pam_fde_boot_pw" /etc/pam.d/greetd
+```
+
+**Alternative Option: Match Login Password to LUKS Password**
 - Change your user login password to match your LUKS password
 - Reset the keyring: `rm -rf ~/.local/share/keyrings/`
 - Log out and log back in
 - Keyring will be created with login password (which matches LUKS)
-
-**Quick Test:**
-```bash
-# Check if pam_fde_boot_pw is installed
-ls -la /usr/local/lib/security/pam_fde_boot_pw.so
-
-# Check if it's in PAM config
-grep -A2 "session.*inject_for" /etc/pam.d/greetd
-
-# Verify systemd is in initrd
-systemctl list-unit-files | grep initrd
-```
 
 ### Keyring Prompts "As Soon As the Keyring Is Required"
 
@@ -276,71 +336,81 @@ rm -rf ~/.local/share/keyrings/
 # Log out and log back in - keyring will sync with new password
 ```
 
-## Full Disk Encryption (FDE) Considerations
+## Full Disk Encryption (FDE) Support
 
-### Do You Need `pam_fde_boot_pw.so`?
+### Good News: `pam_fde_boot_pw.so` is Already Installed!
 
-**If your LUKS password = Login password: NO, you don't need this!**
+**This image includes automatic LUKS keyring unlock out of the box.**
 
-Just reset your keyring (see "LUKS FDE: Keyring Prompts After Login" above) and the current PAM configuration will work.
+The `pam_fde_boot_pw.so` module is compiled and installed during the image build process. No additional setup required!
 
-**If your LUKS password ≠ Login password: YES, you probably need this.**
+### What This Means for LUKS Users
+
+**If your LUKS password = Login password:**
+- ✅ Keyring unlocks automatically
+- ✅ No additional configuration needed
+- ✅ Just reset your keyring if needed: `rm -rf ~/.local/share/keyrings/`
+
+**If your LUKS password ≠ Login password:**
+- ✅ **pam_fde_boot_pw.so is already installed and configured!**
+- ✅ Just reset your keyring: `rm -rf ~/.local/share/keyrings/`
+- ✅ Log out and log back in
+- ✅ Keyring will be created with your LUKS password automatically
+
+### How It Works
 
 `pam_fde_boot_pw.so` is a specialized PAM module that:
-- **Designed for Full Disk Encryption (FDE) setups** (e.g., LUKS encrypted root)
 - Retrieves the disk decryption password from systemd
 - Injects it into GNOME Keyring using `inject_for=gkr` parameter
 - Allows automatic keyring unlock using the LUKS password
+- Works seamlessly with greetd and PAM
 
-### When `pam_fde_boot_pw.so` IS Needed
-
-You need this module **ONLY IF**:
-1. ✅ Your root filesystem is encrypted (LUKS, dm-crypt, etc.)
-2. ✅ You enter a password at boot to decrypt the disk
-3. ✅ Your **LUKS password DIFFERS from your login password**
-4. ✅ You're getting keyring unlock prompts after logging in
-
-**If your passwords match, skip this section and just reset your keyring!**
-
-### LUKS Full Disk Encryption Setup
-
-If you're using LUKS encryption (password entry before GRUB at boot), here's what's happening:
-
-**Current Behavior:**
-1. 🔓 You enter LUKS password at boot → Disk decrypts
+**Current Behavior (With This Image):**
+1. 🔓 You enter LUKS password at boot → Disk decrypts → systemd captures password
 2. 🚪 You enter login password at greeter → You log in
-3. 🔒 GNOME Keyring stays locked → Password prompt appears
-4. 😞 You have to enter password AGAIN to unlock keyring
+3. 🔑 `pam_fde_boot_pw.so` retrieves LUKS password from systemd
+4. 🔓 GNOME Keyring unlocks automatically with LUKS password
+5. ✅ No password prompt!
 
-**Why This Happens:**
-- The LUKS password is captured by systemd during boot
+### LUKS Full Disk Encryption - Technical Details
+
+**Understanding the Problem (Without pam_fde_boot_pw):**
+- LUKS password is captured by systemd during boot
 - But it's not automatically passed to gnome-keyring
 - `pam_gnome_keyring.so` only captures the **login** password
 - If your LUKS password ≠ login password, keyring won't unlock
 
-**Solution: Install `pam_fde_boot_pw.so`**
+**The Solution (Already Implemented in This Image):**
 
-This module retrieves the LUKS password from systemd and injects it into gnome-keyring.
+This image includes `pam_fde_boot_pw.so` which:
+1. Retrieves the LUKS password from systemd
+2. Injects it into gnome-keyring
+3. Enables automatic unlock even when LUKS password ≠ login password
 
-### How to Implement pam_fde_boot_pw
+**Verification:**
 
-**Requirements:**
-1. Systemd in initrd (stores the LUKS password)
-2. The `pam_fde_boot_pw.so` module compiled and installed
-3. Modified PAM configuration
+Check that everything is installed and configured:
 
-**Step 1: Check if systemd is in initrd**
 ```bash
-# Check if using systemd-based initrd
-ls /usr/lib/systemd/system/initrd* 
-# If you see files, systemd is likely available in initrd
+# Verify pam_fde_boot_pw is installed
+ls -la /usr/lib/security/pam_fde_boot_pw.so
+
+# Verify PAM configuration
+grep "pam_fde_boot_pw" /etc/pam.d/greetd
+
+# Check systemd in initrd (should see files)
+ls /usr/lib/systemd/system/initrd*
 ```
 
 Fedora and bootc-based systems typically use systemd in initrd by default.
 
-**Step 2: Build and install pam_fde_boot_pw**
+### Manual Installation (For Other Systems)
 
-Source: https://git.sr.ht/~kennylevinsen/pam_fde_boot_pw
+**Note**: This section is for reference only. This image already includes pam_fde_boot_pw.
+
+If you need to install pam_fde_boot_pw on another system:
+
+**Source**: https://git.sr.ht/~kennylevinsen/pam_fde_boot_pw
 
 ```bash
 # Install build dependencies
@@ -354,9 +424,9 @@ ninja -C build
 sudo ninja -C build install
 ```
 
-This installs the module to `/usr/local/lib/security/pam_fde_boot_pw.so`
+This installs the module to `/usr/lib/security/pam_fde_boot_pw.so`
 
-**Step 3: Update PAM configuration**
+**Update PAM configuration:**
 
 Modify `/etc/pam.d/greetd` to add pam_fde_boot_pw BEFORE gnome-keyring:
 
@@ -377,34 +447,33 @@ password   include      system-login
 
 # Session management
 session    include      system-login
-session    optional     /usr/local/lib/security/pam_fde_boot_pw.so inject_for=gkr
+session    optional     /usr/lib/security/pam_fde_boot_pw.so inject_for=gkr
 session    optional     pam_gnome_keyring.so auto_start
 ```
 
 **CRITICAL:** `pam_fde_boot_pw.so` MUST come BEFORE `pam_gnome_keyring.so` in the session phase!
 
-**Step 4: Verify keyring password matches LUKS password**
-
-For automatic unlock to work:
-```bash
-# The password you use to unlock the keyring should match your LUKS password
-# You may need to reset the keyring:
-rm -rf ~/.local/share/keyrings/
-# Log out and log back in - keyring will be created with LUKS password
-```
-
 ### Building pam_fde_boot_pw in a bootc Image
 
-Add to your `build/10-build.sh` or create `build/25-pam-fde.sh`:
+**Note**: This image already includes pam_fde_boot_pw via `build/25-pam-fde.sh`. This section is for reference.
+
+The build script (`build/25-pam-fde.sh`) compiles and installs pam_fde_boot_pw during image build:
 
 ```bash
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/bash
+
+set -eoux pipefail
 
 echo "::group:: Build and Install pam_fde_boot_pw"
 
-# Install build dependencies (will be in the image)
-dnf5 install -y meson ninja-build pam-devel systemd-devel keyutils-libs-devel git
+# Install build dependencies
+dnf5 install -y \
+    git \
+    meson \
+    ninja-build \
+    pam-devel \
+    systemd-devel \
+    keyutils-libs-devel
 
 # Clone and build
 cd /tmp
@@ -419,12 +488,18 @@ cd /
 rm -rf /tmp/pam_fde_boot_pw
 
 # Remove build-only dependencies (keep runtime deps)
-dnf5 remove -y meson ninja-build pam-devel systemd-devel keyutils-libs-devel git
+dnf5 remove -y \
+    git \
+    meson \
+    ninja-build \
+    pam-devel \
+    systemd-devel \
+    keyutils-libs-devel
 
 echo "::endgroup::"
 ```
 
-Then update your PAM configuration files in `custom/system_files/etc/pam.d/greetd`.
+The PAM configuration in `custom/system_files/etc/pam.d/greetd` includes the module.
 
 ### Alternative: Use Login Password for Keyring
 
