@@ -52,6 +52,7 @@ dnf5 install -y \
     nautilus \
     openfortivpn \
     podman-compose \
+    podman-docker \
     power-profiles-daemon \
     qt5ct \
     qt6ct \

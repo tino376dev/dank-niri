@@ -15,7 +15,7 @@ This template uses the **multi-stage build architecture** from , combining resou
 This custom bootc image is based on **Fedora Silverblue** and includes these default configurations:
 
 ### Added Packages (Build-time)
-- **System packages**: bat, brightnessctl, dbus-tools, fd-find, fish, foot, fuzzel, git-delta, gnome-keyring-pam, helix, micro, nautilus, openfortivpn, podman-compose, power-profiles-daemon, qt5ct, qt6ct, ripgrep, xdg-desktop-portal-gtk, xdg-desktop-portal-gnome, xdg-terminal-exec, xdg-user-dirs, zoxide
+- **System packages**: bat, brightnessctl, dbus-tools, fd-find, fish, foot, fuzzel, git-delta, gnome-keyring-pam, helix, micro, nautilus, openfortivpn, podman-compose, podman-docker, power-profiles-daemon, qt5ct, qt6ct, ripgrep, xdg-desktop-portal-gtk, xdg-desktop-portal-gnome, xdg-terminal-exec, xdg-user-dirs, zoxide
 - **From COPR**: starship (atim/starship), nushell (atim/nushell), yazi (lihaohong/yazi)
 - **Microsoft apps**: Microsoft Edge (stable), VS Code Insiders - Installed from official Microsoft repositories
 
@@ -31,7 +31,7 @@ This custom bootc image is based on **Fedora Silverblue** and includes these def
 
 *This image serves as a starting point. Customize by modifying files in `build/`, `custom/brew/`, `custom/flatpaks/`, and `custom/ujust/` directories.*
 
-*Last updated: 2026-01-27*
+*Last updated: 2026-01-29*
 
 ## About This Template
 
