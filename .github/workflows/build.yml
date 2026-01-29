@@ -14,8 +14,8 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE_DESC: "My Customized Universal Blue Image"
-  IMAGE_KEYWORDS: "bootc,ublue,universal-blue"
+  IMAGE_DESC: "Custom bootc image with Niri compositor and composefs-enabled updates"
+  IMAGE_KEYWORDS: "bootc,ublue,universal-blue,composefs,niri"
   IMAGE_LOGO_URL: "https://avatars.githubusercontent.com/u/120078124?s=200&v=4"  # Put your own image here for a fancy profile on https://artifacthub.io/!
   IMAGE_NAME: "${{ github.event.repository.name }}"  # output image name, usually same as repo name
   IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"  # do not edit
@@ -117,6 +117,18 @@ jobs:
           tags: ${{ env.DEFAULT_TAG }}
           labels: ${{ steps.metadata.outputs.labels }}
           oci: false
+
+      # Verify composefs configuration is present in the built image
+      - name: Verify composefs configuration
+        run: |
+          echo "Verifying composefs configuration in image..."
+          if podman run --rm ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} test -f /usr/lib/ostree/prepare-root.conf; then
+            echo "✓ Composefs configuration file exists"
+            podman run --rm ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} cat /usr/lib/ostree/prepare-root.conf
+          else
+            echo "✗ ERROR: Composefs configuration file not found!"
+            exit 1
+          fi
 
       # Tag for registry
       - name: Tag for registry
