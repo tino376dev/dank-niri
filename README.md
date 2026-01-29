@@ -28,10 +28,11 @@ This custom bootc image is based on **Fedora Silverblue** and includes these def
 - **Podman socket enabled** - Container runtime ready out of the box
 - **Multi-stage build architecture** - Leverages @projectbluefin/common for desktop configuration
 - **Homebrew integration** - Runtime package management via brew
+- **Composefs enabled** - Efficient chunked updates for bootc with reduced bandwidth usage
 
 *This image serves as a starting point. Customize by modifying files in `build/`, `custom/brew/`, `custom/flatpaks/`, and `custom/ujust/` directories.*
 
-*Last updated: 2026-01-27*
+*Last updated: 2026-01-29*
 
 ## About This Template
 
