@@ -28,17 +28,10 @@ This document compares our bootc chunking implementation with the approach descr
 # In .github/workflows/build.yml
 - name: Rechunk image
   run: |
-    # Get the image ID to reference it directly (use sudo to access buildah's storage)
-    IMAGE_ID=$(sudo podman images --filter "reference=localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" --format "{{.ID}}")
-    echo "Image ID: $IMAGE_ID"
-    if [ -z "$IMAGE_ID" ]; then
-      echo "Error: Could not find image ID"
-      exit 1
-    fi
     sudo podman run --rm --privileged \
       -v /var/lib/containers:/var/lib/containers \
       --entrypoint /usr/libexec/bootc-base-imagectl \
-      "$IMAGE_ID" \
+      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
       rechunk --max-layers 67 \
       "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
       "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
@@ -48,10 +41,9 @@ This document compares our bootc chunking implementation with the approach descr
 - `--max-layers 67`: Optimal balance between granularity and overhead
 - Uses the base image itself as the rechunking tool container
 - In-place rechunking (same input and output tag)
-- Uses **sudo** for image ID lookup: Accesses buildah's root storage
-- Uses image ID to avoid registry resolution issues
-- `localhost/` prefix in arguments: References locally built image
+- References image as `localhost/IMAGE:TAG` - standard podman local format
 - Mounts `/var/lib/containers` to access host's container storage
+- Based on the approach from @zirconium-dev/zirconium and @projectbluefin/finpilot
 
 ## Red Hat Article Approach
 
