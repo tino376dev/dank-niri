@@ -29,10 +29,11 @@ This custom bootc image is based on **Fedora Silverblue** and includes these def
 - **Multi-stage build architecture** - Leverages @projectbluefin/common for desktop configuration
 - **Homebrew integration** - Runtime package management via brew
 - **Composefs enabled** - Efficient chunked updates for bootc with reduced bandwidth usage
+- **Image rechunking enabled** - Optimized layer structure for 5-10x smaller updates
 
 *This image serves as a starting point. Customize by modifying files in `build/`, `custom/brew/`, `custom/flatpaks/`, and `custom/ujust/` directories.*
 
-*Last updated: 2026-01-29*
+*Last updated: 2026-02-01*
 
 ## About This Template
 
@@ -226,74 +227,60 @@ Ready to take your custom OS to production? Enable these features for enhanced s
     5. Commit and push
   - Status: **Disabled by default** (requires signing first)
 
-- [ ] **Enable Image Rechunking** (Recommended)
+- [x] **Image Rechunking** (Enabled)
   - Optimizes bootc image layers for better update performance
-  - Reduces update sizes by 5-10x
+  - Reduces update sizes by 5-10x through evenly-sized, resumable layer chunks
   - Improves download resumability with evenly sized layers
-  - To enable:
-    1. Edit `.github/workflows/build.yml`
-    2. Find the "Build Image" step
-    3. Add a rechunk step after the build (see example below)
-  - Status: **Not enabled by default** (optional optimization)
+  - Configured with `--max-layers 67` for optimal balance
+  - Status: **Enabled** - Runs automatically on every build
+  - See [docs/CHUNKING_COMPARISON.md](docs/CHUNKING_COMPARISON.md) for implementation details
 
-#### Adding Image Rechunking
+#### How Image Rechunking Works
 
-After building your bootc image, add a rechunk step before pushing to the registry. Here's an example based on the workflow used by [zirconium-dev/zirconium](https://github.com/zirconium-dev/zirconium):
+Image rechunking is now **enabled by default** in this repository. The workflow automatically:
+
+1. Builds the container image
+2. Rechunks the image layers for optimal update performance
+3. Pushes the optimized image to the registry
+
+The rechunking step is implemented in `.github/workflows/build.yml`:
 
 ```yaml
-- name: Build image
-  id: build
-  run: sudo podman build -t "${IMAGE_NAME}:${DEFAULT_TAG}" -f ./Containerfile .
-
-- name: Rechunk Image
+- name: Rechunk image
   run: |
     sudo podman run --rm --privileged \
       -v /var/lib/containers:/var/lib/containers \
       --entrypoint /usr/libexec/bootc-base-imagectl \
-      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
-      rechunk --max-layers 96 \
-      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
-      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}"
-
-- name: Push to Registry
-  run: sudo podman push "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}"
-```
-
-Alternative approach using a temporary tag for clarity:
-
-```yaml
-- name: Rechunk Image
-  run: |
-    sudo podman run --rm --privileged \
-      -v /var/lib/containers:/var/lib/containers \
-      --entrypoint /usr/libexec/bootc-base-imagectl \
-      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
+      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
       rechunk --max-layers 67 \
-      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
-      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}-rechunked"
-    
-    # Tag the rechunked image with the original tag
-    sudo podman tag "localhost/${IMAGE_NAME}:${DEFAULT_TAG}-rechunked" "localhost/${IMAGE_NAME}:${DEFAULT_TAG}"
-    sudo podman rmi "localhost/${IMAGE_NAME}:${DEFAULT_TAG}-rechunked"
+      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
 ```
 
-**Parameters:**
-- `--max-layers`: Maximum number of layers for the rechunked image (typically 67 for optimal balance)
-- The first image reference is the source (input)
-- The second image reference is the destination (output)
-  - When using the same reference for both, the image is rechunked in-place
-  - You can also use different tags (e.g., `-rechunked` suffix) and then retag if preferred
+**Configuration:**
+- Uses `--max-layers 67` for optimal balance between granularity and overhead
+- Rechunks in-place (same input and output reference)
+- Runs automatically on every build before pushing to registry
+
+**Alternative configurations:**
+
+If you want to adjust the number of layers, you can modify the `--max-layers` parameter:
+- `--max-layers 67`: Recommended default (optimal balance)
+- `--max-layers 96`: Higher granularity (more layers, slightly larger overhead)
+- `--max-layers 48`: Lower granularity (fewer layers, faster processing)
 
 **References:**
+- [docs/CHUNKING_COMPARISON.md](docs/CHUNKING_COMPARISON.md) - Comparison with Red Hat article approach
 - [CoreOS rpm-ostree build-chunked-oci documentation](https://coreos.github.io/rpm-ostree/build-chunked-oci/)
 - [bootc documentation](https://containers.github.io/bootc/)
 
 ### After Enabling Production Features
 
 Your workflow will:
-- Sign all images with your key
-- Generate and attach SBOMs
-- Provide full supply chain transparency
+- Rechunk images for optimized updates (already enabled)
+- Sign all images with your key (optional)
+- Generate and attach SBOMs (optional)
+- Provide full supply chain transparency (optional)
 
 Users can verify your images with:
 ```bash
