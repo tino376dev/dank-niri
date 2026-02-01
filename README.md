@@ -248,10 +248,12 @@ The rechunking step is implemented in `.github/workflows/build.yml`:
 ```yaml
 - name: Rechunk image
   run: |
+    # Get the image ID to reference it directly
+    IMAGE_ID=$(podman images --filter "reference=localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" --format "{{.ID}}")
     sudo podman run --rm --privileged \
       -v /var/lib/containers:/var/lib/containers \
       --entrypoint /usr/libexec/bootc-base-imagectl \
-      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+      "$IMAGE_ID" \
       rechunk --max-layers 67 \
       "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
       "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"

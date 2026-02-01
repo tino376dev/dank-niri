@@ -28,10 +28,12 @@ This document compares our bootc chunking implementation with the approach descr
 # In .github/workflows/build.yml
 - name: Rechunk image
   run: |
+    # Get the image ID to reference it directly
+    IMAGE_ID=$(podman images --filter "reference=localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" --format "{{.ID}}")
     sudo podman run --rm --privileged \
       -v /var/lib/containers:/var/lib/containers \
       --entrypoint /usr/libexec/bootc-base-imagectl \
-      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+      "$IMAGE_ID" \
       rechunk --max-layers 67 \
       "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
       "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
@@ -41,7 +43,8 @@ This document compares our bootc chunking implementation with the approach descr
 - `--max-layers 67`: Optimal balance between granularity and overhead
 - Uses the base image itself as the rechunking tool container
 - In-place rechunking (same input and output tag)
-- `localhost/` prefix: References locally built image (buildah default)
+- Uses image ID to avoid registry resolution issues
+- `localhost/` prefix in arguments: References locally built image
 - Mounts `/var/lib/containers` to access host's container storage
 
 ## Red Hat Article Approach
