@@ -24,6 +24,10 @@ This custom bootc image is based on **Fedora Silverblue** and includes these def
 - **Fonts (Homebrew)**: Nerd Fonts (Fira Code, JetBrains Mono, Meslo LG, Hack) - Programming fonts with icons and glyphs
 - **GUI Apps (Flatpak)**: Firefox, Thunderbird, GNOME core apps, Pinta, Flatseal, Extension Manager, and more - Essential desktop applications
 
+### Removed/Disabled
+- **firefox** - Removed from base image (can be reinstalled via Flatpak if needed)
+- **tmux** - Removed from base image to reduce bloat (alternatives available via Homebrew)
+
 ### System Configuration
 - **Podman socket enabled** - Container runtime ready out of the box
 - **Multi-stage build architecture** - Leverages @projectbluefin/common for desktop configuration
@@ -32,7 +36,7 @@ This custom bootc image is based on **Fedora Silverblue** and includes these def
 
 *This image serves as a starting point. Customize by modifying files in `build/`, `custom/brew/`, `custom/flatpaks/`, and `custom/ujust/` directories.*
 
-*Last updated: 2026-01-29*
+*Last updated: 2026-02-01*
 
 ## About This Template
 

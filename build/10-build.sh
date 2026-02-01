@@ -34,6 +34,15 @@ fi
 
 echo "::endgroup::"
 
+echo "::group:: Remove Unwanted Base Image Packages"
+
+# Remove packages inherited from base image that we don't need
+dnf5 remove -y \
+    firefox \
+    tmux
+
+echo "::endgroup::"
+
 echo "::group:: Install Packages"
 
 # Install packages using dnf5
