@@ -142,8 +142,13 @@ jobs:
       # Reduces update bandwidth by 5-10x through evenly-sized, resumable layer chunks
       - name: Rechunk image
         run: |
-          # Get the image ID to reference it directly
-          IMAGE_ID=$(podman images --filter "reference=localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" --format "{{.ID}}")
+          # Get the image ID to reference it directly (use sudo to access buildah's storage)
+          IMAGE_ID=$(sudo podman images --filter "reference=localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" --format "{{.ID}}")
+          echo "Image ID: $IMAGE_ID"
+          if [ -z "$IMAGE_ID" ]; then
+            echo "Error: Could not find image ID"
+            exit 1
+          fi
           sudo podman run --rm --privileged \
             -v /var/lib/containers:/var/lib/containers \
             --entrypoint /usr/libexec/bootc-base-imagectl \
