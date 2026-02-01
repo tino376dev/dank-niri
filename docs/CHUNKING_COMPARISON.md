@@ -31,16 +31,17 @@ This document compares our bootc chunking implementation with the approach descr
     sudo podman run --rm --privileged \
       -v /var/lib/containers:/var/lib/containers \
       --entrypoint /usr/libexec/bootc-base-imagectl \
-      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+      "containers-storage:${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
       rechunk --max-layers 67 \
-      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
-      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+      "containers-storage:${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+      "containers-storage:${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
 ```
 
 **Parameters:**
 - `--max-layers 67`: Optimal balance between granularity and overhead
 - Uses the base image itself as the rechunking tool container
 - In-place rechunking (same input and output tag)
+- `containers-storage:` prefix accesses locally built images
 
 ## Red Hat Article Approach
 
