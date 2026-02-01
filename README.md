@@ -251,10 +251,10 @@ The rechunking step is implemented in `.github/workflows/build.yml`:
     sudo podman run --rm --privileged \
       -v /var/lib/containers:/var/lib/containers \
       --entrypoint /usr/libexec/bootc-base-imagectl \
-      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
       rechunk --max-layers 67 \
-      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
-      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
 ```
 
 **Configuration:**
