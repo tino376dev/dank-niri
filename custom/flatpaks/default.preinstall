@@ -4,9 +4,6 @@
 # See: https://docs.flatpak.org/en/latest/flatpak-command-reference.html#flatpak-preinstall
 
 
-[Flatpak Preinstall app.zen_browser.zen]
-Branch=stable
-
 [Flatpak Preinstall dev.zed.Zed]
 Branch=stable
 
