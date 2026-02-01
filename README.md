@@ -293,6 +293,8 @@ cosign verify --key cosign.pub ghcr.io/your-username/your-repo-name:stable
 - [Flatpak Preinstall](custom/flatpaks/README.md) - GUI application setup
 - [ujust Commands](custom/ujust/README.md) - User convenience commands
 - [Build Scripts](build/README.md) - Build-time customization
+- [Bootc Chunking Implementation](docs/REDHAT_ARTICLE_COMPARISON.md) - How our chunking compares to Red Hat article
+- [Composefs Documentation](docs/COMPOSEFS.md) - Client-side chunked updates
 
 ## Architecture
 
