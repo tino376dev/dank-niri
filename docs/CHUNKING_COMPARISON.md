@@ -28,8 +28,10 @@ This document compares our bootc chunking implementation with the approach descr
 # In .github/workflows/build.yml
 - name: Rechunk image
   run: |
-    sudo podman run --rm --privileged --pull=never \
+    # Use --root to access user's podman storage where buildah-build stored the image  
+    sudo podman --root $HOME/.local/share/containers/storage run --rm --privileged --pull=never \
       -v /var/lib/containers:/var/lib/containers \
+      -v $HOME/.local/share/containers:$HOME/.local/share/containers \
       --entrypoint /usr/libexec/bootc-base-imagectl \
       "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
       rechunk --max-layers 67 \
@@ -40,6 +42,8 @@ This document compares our bootc chunking implementation with the approach descr
 **Parameters:**
 - `--max-layers 67`: Optimal balance between granularity and overhead
 - `--pull=never`: Critical! Forces podman to use local image only (sudo changes registry behavior)
+- `--root $HOME/.local/share/containers/storage`: Access user's podman storage where buildah-build stores images
+- `-v $HOME/.local/share/containers:$HOME/.local/share/containers`: Mount user's storage into container
 - Uses the base image itself as the rechunking tool container
 - In-place rechunking (same input and output tag)
 - References image as `IMAGE:TAG` - matches how buildah-build tags it
@@ -47,11 +51,11 @@ This document compares our bootc chunking implementation with the approach descr
 - Based on the approach from @zirconium-dev/zirconium and @projectbluefin/finpilot
 
 **Note**: The image reference format varies by build tool:
-- `redhat-actions/buildah-build` tags as `IMAGE:TAG` (no localhost prefix)
-- `podman build` tags as `localhost/IMAGE:TAG` (with localhost prefix)
+- `redhat-actions/buildah-build` tags as `IMAGE:TAG` (no localhost prefix) in user storage
+- `podman build` tags as `localhost/IMAGE:TAG` (with localhost prefix) in user/root storage depending on sudo
 - Always match the format used by your build step
 
-**Important**: `--pull=never` is required when using sudo because root's `/etc/containers/registries.conf` may attempt to pull from remote registries, while regular user's podman doesn't
+**Important**: When using `buildah-build` action (runs as user), you must use `--root` flag with sudo podman to access the user's storage location. Root's podman storage and user's podman storage are separate.
 
 ## Red Hat Article Approach
 
