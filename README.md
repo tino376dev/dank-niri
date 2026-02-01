@@ -248,7 +248,7 @@ The rechunking step is implemented in `.github/workflows/build.yml`:
 ```yaml
 - name: Rechunk image
   run: |
-    sudo podman run --rm --privileged \
+    sudo podman run --rm --privileged --pull=never \
       -v /var/lib/containers:/var/lib/containers \
       --entrypoint /usr/libexec/bootc-base-imagectl \
       "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \

@@ -28,7 +28,7 @@ This document compares our bootc chunking implementation with the approach descr
 # In .github/workflows/build.yml
 - name: Rechunk image
   run: |
-    sudo podman run --rm --privileged \
+    sudo podman run --rm --privileged --pull=never \
       -v /var/lib/containers:/var/lib/containers \
       --entrypoint /usr/libexec/bootc-base-imagectl \
       "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
@@ -39,6 +39,7 @@ This document compares our bootc chunking implementation with the approach descr
 
 **Parameters:**
 - `--max-layers 67`: Optimal balance between granularity and overhead
+- `--pull=never`: Critical! Forces podman to use local image only (sudo changes registry behavior)
 - Uses the base image itself as the rechunking tool container
 - In-place rechunking (same input and output tag)
 - References image as `IMAGE:TAG` - matches how buildah-build tags it
@@ -49,6 +50,8 @@ This document compares our bootc chunking implementation with the approach descr
 - `redhat-actions/buildah-build` tags as `IMAGE:TAG` (no localhost prefix)
 - `podman build` tags as `localhost/IMAGE:TAG` (with localhost prefix)
 - Always match the format used by your build step
+
+**Important**: `--pull=never` is required when using sudo because root's `/etc/containers/registries.conf` may attempt to pull from remote registries, while regular user's podman doesn't
 
 ## Red Hat Article Approach
 

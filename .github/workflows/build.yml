@@ -142,7 +142,7 @@ jobs:
       # Reduces update bandwidth by 5-10x through evenly-sized, resumable layer chunks
       - name: Rechunk image
         run: |
-          sudo podman run --rm --privileged \
+          sudo podman run --rm --privileged --pull=never \
             -v /var/lib/containers:/var/lib/containers \
             --entrypoint /usr/libexec/bootc-base-imagectl \
             "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
