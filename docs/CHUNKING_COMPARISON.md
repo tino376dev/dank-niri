@@ -29,8 +29,9 @@ This document compares our bootc chunking implementation with the approach descr
 - name: Rechunk image
   run: |
     # Push image from user storage to root storage (buildah-build uses user storage)
+    # Tag without localhost/ prefix in root storage (rpm-ostree expects this format)
     podman push "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
-      containers-storage:localhost/"${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+      containers-storage:"${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
     
     # Use a bootc base image to run the rechunk tool (which contains bootc-base-imagectl)
     # Mount root's podman storage (/var/lib/containers) to the same path inside container
@@ -39,19 +40,19 @@ This document compares our bootc chunking implementation with the approach descr
       quay.io/centos-bootc/centos-bootc:stream10 \
       /usr/libexec/bootc-base-imagectl \
       rechunk --max-layers 67 \
-      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
-      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
+      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
     
     # Replace the original image with the rechunked version
     sudo podman tag \
-      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked" \
-      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked" \
+      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
     
     # Clean up the temporary tag
-    sudo podman rmi "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
+    sudo podman rmi "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
     
     # Pull rechunked image back to user storage for the push step
-    podman pull containers-storage:localhost/"${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+    podman pull containers-storage:"${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
 ```
 
 **Parameters:**
