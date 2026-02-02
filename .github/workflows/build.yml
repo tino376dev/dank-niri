@@ -142,33 +142,33 @@ jobs:
       # Reduces update bandwidth by 5-10x through evenly-sized, resumable layer chunks
       - name: Rechunk image
         run: |
-          # Push image from user storage to root storage (buildah-build uses user storage)
-          # Tag without localhost/ prefix in root storage (rpm-ostree expects this format)
+          # Push image from user storage to root storage with localhost/ prefix
+          # (buildah-build uses user storage, rechunking requires root storage)
+          # The localhost/ prefix is required for rpm-ostree to find the image
           podman push "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
-            containers-storage:"${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+            containers-storage:"localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
           
           # Use a bootc base image to run the rechunk tool (which contains bootc-base-imagectl)
           # Mount root's podman storage (/var/lib/containers) to the same path inside container
-          # Source needs containers-storage: prefix to avoid short-name resolution
-          # Destination must NOT have prefix (tool adds it internally)
+          # Use localhost/ prefix on both source and destination (AlmaLinux pattern)
           sudo podman run --rm --privileged \
             -v /var/lib/containers:/var/lib/containers:z \
             quay.io/centos-bootc/centos-bootc:stream10 \
             /usr/libexec/bootc-base-imagectl \
             rechunk --max-layers 67 \
-            "containers-storage:${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
-            "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
+            "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+            "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
           
           # Replace the original image with the rechunked version
           sudo podman tag \
-            "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked" \
-            "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+            "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked" \
+            "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
           
           # Clean up the temporary tag
-          sudo podman rmi "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
+          sudo podman rmi "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
           
           # Pull rechunked image back to user storage for the push step
-          podman pull containers-storage:"${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          podman pull containers-storage:"localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
 
       # SBOM (OPTIONAL): Software Bill of Materials generation using Syft
       # Creates a detailed inventory of all software components in the image for supply chain security.

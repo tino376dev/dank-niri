@@ -28,32 +28,33 @@ This document compares our bootc chunking implementation with the approach descr
 # In .github/workflows/build.yml
 - name: Rechunk image
   run: |
-    # Push image from user storage to root storage (buildah-build uses user storage)
+    # Push image from user storage to root storage with localhost/ prefix
+    # (buildah-build uses user storage, rechunking requires root storage)
+    # The localhost/ prefix is required - matches AlmaLinux/bootc-images approach
     podman push "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
-      containers-storage:"${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+      containers-storage:"localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
     
     # Use a bootc base image to run the rechunk tool (which contains bootc-base-imagectl)
     # Mount root's podman storage (/var/lib/containers) to the same path inside container
-    # Source needs containers-storage: prefix to avoid short-name resolution
-    # Destination must NOT have prefix (tool adds it internally)
+    # Use localhost/ prefix on both source and destination (AlmaLinux pattern)
     sudo podman run --rm --privileged \
       -v /var/lib/containers:/var/lib/containers:z \
       quay.io/centos-bootc/centos-bootc:stream10 \
       /usr/libexec/bootc-base-imagectl \
       rechunk --max-layers 67 \
-      "containers-storage:${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
-      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
+      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
     
     # Replace the original image with the rechunked version
     sudo podman tag \
-      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked" \
-      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked" \
+      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
     
     # Clean up the temporary tag
-    sudo podman rmi "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
+    sudo podman rmi "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
     
     # Pull rechunked image back to user storage for the push step
-    podman pull containers-storage:"${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+    podman pull containers-storage:"localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
 ```
 
 **Parameters:**
@@ -63,15 +64,14 @@ This document compares our bootc chunking implementation with the approach descr
 - Mounts `/var/lib/containers` to same path inside container (avoids database path mismatch)
 - Creates temporary `-rechunked` tag, then replaces original
 - Based on proven [AlmaLinux/bootc-images](https://github.com/AlmaLinux/bootc-images) approach
-- References image as `IMAGE:TAG` - matches how buildah-build tags it
-- Based on the approach from @zirconium-dev/zirconium and @projectbluefin/finpilot
+- **Critical**: Uses `localhost/` prefix when pushing to root storage and in rechunk command
+- This matches how `sudo podman build` tags images in root storage
 
-**Note**: The image reference format varies by build tool:
-- `redhat-actions/buildah-build` tags as `IMAGE:TAG` (no localhost prefix) in user storage
-- `podman build` tags as `localhost/IMAGE:TAG` (with localhost prefix) in user/root storage depending on sudo
-- Always match the format used by your build step
-
-**Important**: When using `buildah-build` action (runs as user), you must use `--root` flag with sudo podman to access the user's storage location. Root's podman storage and user's podman storage are separate.
+**Note**: The image reference format requirement:
+- When transferring from user storage (buildah-build) to root storage, add `localhost/` prefix
+- AlmaLinux uses `sudo podman build` which automatically adds this prefix
+- We use `buildah-build` (runs as user) so we must manually add the prefix during transfer
+- The `localhost/` prefix is required for rpm-ostree to resolve the image correctly
 
 ## Red Hat Article Approach
 
