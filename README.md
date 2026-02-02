@@ -249,11 +249,12 @@ The rechunking step is implemented in `.github/workflows/build.yml`:
 - name: Rechunk image
   run: |
     # Use a bootc base image to run the rechunk tool (which contains bootc-base-imagectl)
-    # Mount the user's podman storage to /var/lib/containers inside the container
+    # Mount the user's podman storage into the container and pass --root to the tool
     sudo podman --root $HOME/.local/share/containers/storage run --rm --privileged \
-      -v $HOME/.local/share/containers/storage:/var/lib/containers/storage:z \
+      -v $HOME/.local/share/containers/storage:$HOME/.local/share/containers/storage:z \
       quay.io/centos-bootc/centos-bootc:stream10 \
-      /usr/libexec/bootc-base-imagectl rechunk --max-layers 67 \
+      /usr/libexec/bootc-base-imagectl --root $HOME/.local/share/containers/storage \
+      rechunk --max-layers 67 \
       "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
       "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
     # Replace the original image with the rechunked version
@@ -267,10 +268,11 @@ The rechunking step is implemented in `.github/workflows/build.yml`:
 
 **How it works:**
 1. Uses `quay.io/centos-bootc/centos-bootc:stream10` which contains `bootc-base-imagectl` tool
-2. Mounts user's podman storage (`$HOME/.local/share/containers/storage`) to `/var/lib/containers/storage` inside the container
-3. Tool reads the original image from mounted storage, rechunks it, and outputs to a temporary tag
-4. Tags the rechunked version with the original tag name
-5. Removes the temporary tag to clean up
+2. Mounts user's podman storage to the same path inside the container to preserve database paths
+3. Passes `--root` flag to `bootc-base-imagectl` to access the mounted storage correctly
+4. Tool reads the original image from mounted storage, rechunks it, and outputs to a temporary tag
+5. Tags the rechunked version with the original tag name
+6. Removes the temporary tag to clean up
 
 **Configuration:**
 - Uses `--max-layers 67` for optimal balance between granularity and overhead
