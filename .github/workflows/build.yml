@@ -154,8 +154,8 @@ jobs:
             quay.io/centos-bootc/centos-bootc:stream10 \
             /usr/libexec/bootc-base-imagectl \
             rechunk --max-layers 67 \
-            "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
-            "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
+            "containers-storage:${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+            "containers-storage:${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
           
           # Replace the original image with the rechunked version
           sudo podman tag \
