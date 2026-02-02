@@ -26,17 +26,23 @@ This document compares our bootc chunking implementation with the approach descr
 
 ```yaml
 # In .github/workflows/build.yml
+- name: Build Image
+  run: |
+    # Build with sudo podman build (stores directly in root storage with localhost/ prefix)
+    # This matches the zirconium/AlmaLinux approach
+    sudo podman build \
+      -f ./Containerfile \
+      -t localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} \
+      $LABEL_ARGS \
+      .
+
 - name: Rechunk image
   run: |
-    # Push image from user storage to root storage with localhost/ prefix
-    # (buildah-build uses user storage, rechunking requires root storage)
-    # The localhost/ prefix is required - matches AlmaLinux/bootc-images approach
-    podman push "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
-      containers-storage:"localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+    # Image is already in root storage with localhost/ prefix (from sudo podman build)
+    # No storage transfer needed - just rechunk directly (matches zirconium/AlmaLinux)
     
     # Use a bootc base image to run the rechunk tool (which contains bootc-base-imagectl)
     # Mount root's podman storage (/var/lib/containers) to the same path inside container
-    # Use localhost/ prefix on both source and destination (AlmaLinux pattern)
     sudo podman run --rm --privileged \
       -v /var/lib/containers:/var/lib/containers:z \
       quay.io/centos-bootc/centos-bootc:stream10 \

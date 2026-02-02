@@ -107,24 +107,31 @@ jobs:
 
       - name: Build Image
         id: build_image
-        uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
-        with:
-          containerfiles: |
-            ./Containerfile
-          # Postfix image name with -custom to make it a little more descriptive
-          # Syntax: https://docs.github.com/en/actions/learn-github-actions/expressions#format
-          image: ${{ env.IMAGE_NAME }}
-          tags: ${{ env.DEFAULT_TAG }}
-          labels: ${{ steps.metadata.outputs.labels }}
-          oci: false
+        run: |
+          # Build with sudo podman build (stores directly in root storage with localhost/ prefix)
+          # This matches the zirconium/AlmaLinux approach and eliminates storage transfer complexity
+          
+          # Convert labels to --label arguments
+          LABEL_ARGS=""
+          for label in ${{ steps.metadata.outputs.labels }}; do
+            LABEL_ARGS="$LABEL_ARGS --label $label"
+          done
+          
+          # Build the image
+          sudo podman build \
+            -f ./Containerfile \
+            -t localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} \
+            $LABEL_ARGS \
+            .
 
       # Verify composefs configuration is present in the built image
       - name: Verify composefs configuration
         run: |
           echo "Verifying composefs configuration in image..."
-          if podman run --rm ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} test -f /usr/lib/ostree/prepare-root.conf; then
+          # Image is now in root storage with localhost/ prefix (from sudo podman build)
+          if sudo podman run --rm localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} test -f /usr/lib/ostree/prepare-root.conf; then
             echo "✓ Composefs configuration file exists"
-            podman run --rm ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} cat /usr/lib/ostree/prepare-root.conf
+            sudo podman run --rm localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} cat /usr/lib/ostree/prepare-root.conf
           else
             echo "✗ ERROR: Composefs configuration file not found!"
             exit 1
@@ -133,8 +140,9 @@ jobs:
       # Tag for registry
       - name: Tag for registry
         run: |
+          # Image is in root storage, use sudo podman
           for tag in ${{ steps.metadata.outputs.tags }}; do
-            podman tag ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} ${{ env.IMAGE_NAME }}:$tag
+            sudo podman tag localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} localhost/${{ env.IMAGE_NAME }}:$tag
           done
 
       # Rechunk image for optimized bootc updates
@@ -142,15 +150,11 @@ jobs:
       # Reduces update bandwidth by 5-10x through evenly-sized, resumable layer chunks
       - name: Rechunk image
         run: |
-          # Push image from user storage to root storage with localhost/ prefix
-          # (buildah-build uses user storage, rechunking requires root storage)
-          # The localhost/ prefix is required for rpm-ostree to find the image
-          podman push "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
-            containers-storage:"localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          # Image is already in root storage with localhost/ prefix (from sudo podman build)
+          # No storage transfer needed - just rechunk directly (matches zirconium/AlmaLinux)
           
           # Use a bootc base image to run the rechunk tool (which contains bootc-base-imagectl)
           # Mount root's podman storage (/var/lib/containers) to the same path inside container
-          # Use localhost/ prefix on both source and destination (AlmaLinux pattern)
           sudo podman run --rm --privileged \
             -v /var/lib/containers:/var/lib/containers:z \
             quay.io/centos-bootc/centos-bootc:stream10 \
@@ -166,9 +170,6 @@ jobs:
           
           # Clean up the temporary tag
           sudo podman rmi "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
-          
-          # Pull rechunked image back to user storage for the push step
-          podman pull containers-storage:"localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
 
       # SBOM (OPTIONAL): Software Bill of Materials generation using Syft
       # Creates a detailed inventory of all software components in the image for supply chain security.
@@ -207,18 +208,17 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push To GHCR
-        uses: redhat-actions/push-to-registry@5ed88d269cf581ea9ef6dd6806d01562096bee9c # v2
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         id: push
-        env:
-          REGISTRY_USER: ${{ github.actor }}
-          REGISTRY_PASSWORD: ${{ github.token }}
-        with:
-          registry: ${{ env.IMAGE_REGISTRY }}
-          image: ${{ env.IMAGE_NAME }}
-          tags: ${{ steps.metadata.outputs.tags }}
-          username: ${{ env.REGISTRY_USER }}
-          password: ${{ env.REGISTRY_PASSWORD }}
+        run: |
+          # Push all tags to GHCR
+          # Image is in root storage, use sudo podman
+          for tag in ${{ steps.metadata.outputs.tags }}; do
+            echo "Pushing localhost/${{ env.IMAGE_NAME }}:$tag to ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:$tag"
+            sudo podman push \
+              localhost/${{ env.IMAGE_NAME }}:$tag \
+              ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:$tag
+          done
 
       # This section is optional and only needs to be enabled if you plan on distributing
       # your project for others to consume. You will need to create a public and private key
