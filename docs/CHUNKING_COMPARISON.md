@@ -29,11 +29,11 @@ This document compares our bootc chunking implementation with the approach descr
 - name: Rechunk image
   run: |
     # Use a bootc base image to run the rechunk tool (which contains bootc-base-imagectl)
-    # Mount the user's podman storage into the container and pass --root to the tool
+    # Mount the user's podman storage to /var/tmp/storage inside the container
     sudo podman --root $HOME/.local/share/containers/storage run --rm --privileged \
-      -v $HOME/.local/share/containers/storage:$HOME/.local/share/containers/storage:z \
+      -v $HOME/.local/share/containers/storage:/var/tmp/storage:z \
       quay.io/centos-bootc/centos-bootc:stream10 \
-      /usr/libexec/bootc-base-imagectl --root $HOME/.local/share/containers/storage \
+      /usr/libexec/bootc-base-imagectl --root /var/tmp/storage \
       rechunk --max-layers 67 \
       "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
       "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
@@ -49,8 +49,8 @@ This document compares our bootc chunking implementation with the approach descr
 **Parameters:**
 - `--max-layers 67`: Optimal balance between granularity and overhead
 - Uses `quay.io/centos-bootc/centos-bootc:stream10` which contains the `bootc-base-imagectl` tool
-- Mounts user's podman storage to the same path inside the container to preserve database integrity
-- Passes `--root` flag to `bootc-base-imagectl` to access the mounted storage correctly
+- Mounts user's podman storage to `/var/tmp/storage` inside the container (simple path that exists in minimal bootc images)
+- Passes `--root /var/tmp/storage` to `bootc-base-imagectl` to access the mounted storage correctly
 - Creates temporary `-rechunked` tag, then replaces original
 - `--root $HOME/.local/share/containers/storage`: Access user's podman storage where buildah-build stores images
 - Uses the base image itself as the rechunking tool container
