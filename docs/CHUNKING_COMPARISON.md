@@ -34,13 +34,14 @@ This document compares our bootc chunking implementation with the approach descr
     
     # Use a bootc base image to run the rechunk tool (which contains bootc-base-imagectl)
     # Mount root's podman storage (/var/lib/containers) to the same path inside container
-    # bootc-base-imagectl automatically adds containers-storage: prefix internally
+    # Source needs containers-storage: prefix to avoid short-name resolution
+    # Destination must NOT have prefix (tool adds it internally)
     sudo podman run --rm --privileged \
       -v /var/lib/containers:/var/lib/containers:z \
       quay.io/centos-bootc/centos-bootc:stream10 \
       /usr/libexec/bootc-base-imagectl \
       rechunk --max-layers 67 \
-      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+      "containers-storage:${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
       "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
     
     # Replace the original image with the rechunked version
