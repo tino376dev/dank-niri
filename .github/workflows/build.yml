@@ -143,9 +143,9 @@ jobs:
       - name: Rechunk image
         run: |
           # Use a bootc base image to run the rechunk tool (which contains bootc-base-imagectl)
-          # The tool reads from and writes to podman storage via the mounted volume
+          # Mount the user's podman storage to /var/lib/containers inside the container
           sudo podman --root $HOME/.local/share/containers/storage run --rm --privileged \
-            -v $HOME/.local/share/containers:$HOME/.local/share/containers:z \
+            -v $HOME/.local/share/containers/storage:/var/lib/containers/storage:z \
             quay.io/centos-bootc/centos-bootc:stream10 \
             /usr/libexec/bootc-base-imagectl rechunk --max-layers 67 \
             "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \

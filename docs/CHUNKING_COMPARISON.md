@@ -30,7 +30,7 @@ This document compares our bootc chunking implementation with the approach descr
   run: |
     # Use a bootc base image to run the rechunk tool (which contains bootc-base-imagectl)
     sudo podman --root $HOME/.local/share/containers/storage run --rm --privileged \
-      -v $HOME/.local/share/containers:$HOME/.local/share/containers:z \
+      -v $HOME/.local/share/containers/storage:/var/lib/containers/storage:z \
       quay.io/centos-bootc/centos-bootc:stream10 \
       /usr/libexec/bootc-base-imagectl rechunk --max-layers 67 \
       "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
@@ -47,7 +47,7 @@ This document compares our bootc chunking implementation with the approach descr
 **Parameters:**
 - `--max-layers 67`: Optimal balance between granularity and overhead
 - Uses `quay.io/centos-bootc/centos-bootc:stream10` which contains the `bootc-base-imagectl` tool
-- Mounts user's podman storage for access to locally built images
+- Mounts user's podman storage to `/var/lib/containers/storage` inside the container
 - Creates temporary `-rechunked` tag, then replaces original
 - `--root $HOME/.local/share/containers/storage`: Access user's podman storage where buildah-build stores images
 - Uses the base image itself as the rechunking tool container
