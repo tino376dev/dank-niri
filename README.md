@@ -248,18 +248,33 @@ The rechunking step is implemented in `.github/workflows/build.yml`:
 ```yaml
 - name: Rechunk image
   run: |
-    # Use --root to access user's podman storage where buildah-build stored the image
-    sudo podman --root $HOME/.local/share/containers/storage run --rm --privileged --pull=never \
-      --entrypoint /usr/libexec/bootc-base-imagectl \
+    # Use a bootc base image to run the rechunk tool (which contains bootc-base-imagectl)
+    # The tool reads from and writes to podman storage via the mounted volume
+    sudo podman --root $HOME/.local/share/containers/storage run --rm --privileged \
+      -v $HOME/.local/share/containers:$HOME/.local/share/containers:z \
+      quay.io/centos-bootc/centos-bootc:stream10 \
+      /usr/libexec/bootc-base-imagectl rechunk --max-layers 67 \
       "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
-      rechunk --max-layers 67 \
-      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
+    # Replace the original image with the rechunked version
+    sudo podman --root $HOME/.local/share/containers/storage tag \
+      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked" \
       "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+    # Clean up the temporary tag
+    sudo podman --root $HOME/.local/share/containers/storage rmi \
+      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
 ```
+
+**How it works:**
+1. Uses `quay.io/centos-bootc/centos-bootc:stream10` which contains `bootc-base-imagectl` tool
+2. Mounts user's podman storage into the container for access to local images
+3. Tool reads the original image, rechunks it, and outputs to a temporary tag
+4. Tags the rechunked version with the original tag name
+5. Removes the temporary tag to clean up
 
 **Configuration:**
 - Uses `--max-layers 67` for optimal balance between granularity and overhead
-- Rechunks in-place (same input and output reference)
+- Creates temporary `-rechunked` tag during process, then replaces original
 - Runs automatically on every build before pushing to registry
 
 **Alternative configurations:**

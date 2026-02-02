@@ -28,18 +28,27 @@ This document compares our bootc chunking implementation with the approach descr
 # In .github/workflows/build.yml
 - name: Rechunk image
   run: |
-    # Use --root to access user's podman storage where buildah-build stored the image  
-    sudo podman --root $HOME/.local/share/containers/storage run --rm --privileged --pull=never \
-      --entrypoint /usr/libexec/bootc-base-imagectl \
+    # Use a bootc base image to run the rechunk tool (which contains bootc-base-imagectl)
+    sudo podman --root $HOME/.local/share/containers/storage run --rm --privileged \
+      -v $HOME/.local/share/containers:$HOME/.local/share/containers:z \
+      quay.io/centos-bootc/centos-bootc:stream10 \
+      /usr/libexec/bootc-base-imagectl rechunk --max-layers 67 \
       "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
-      rechunk --max-layers 67 \
-      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
+    # Replace the original image with the rechunked version
+    sudo podman --root $HOME/.local/share/containers/storage tag \
+      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked" \
       "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+    # Clean up the temporary tag
+    sudo podman --root $HOME/.local/share/containers/storage rmi \
+      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
 ```
 
 **Parameters:**
 - `--max-layers 67`: Optimal balance between granularity and overhead
-- `--pull=never`: Critical! Forces podman to use local image only (sudo changes registry behavior)
+- Uses `quay.io/centos-bootc/centos-bootc:stream10` which contains the `bootc-base-imagectl` tool
+- Mounts user's podman storage for access to locally built images
+- Creates temporary `-rechunked` tag, then replaces original
 - `--root $HOME/.local/share/containers/storage`: Access user's podman storage where buildah-build stores images
 - Uses the base image itself as the rechunking tool container
 - In-place rechunking (same input and output tag)
