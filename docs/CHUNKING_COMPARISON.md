@@ -28,33 +28,39 @@ This document compares our bootc chunking implementation with the approach descr
 # In .github/workflows/build.yml
 - name: Rechunk image
   run: |
+    # Push image from user storage to root storage (buildah-build uses user storage)
+    podman push "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+      containers-storage:localhost/"${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+    
     # Use a bootc base image to run the rechunk tool (which contains bootc-base-imagectl)
-    # Mount the user's podman storage to /var/lib/containers/storage (default location)
-    sudo podman --root $HOME/.local/share/containers/storage run --rm --privileged \
-      -v $HOME/.local/share/containers/storage:/var/lib/containers/storage:z \
+    # Mount root's podman storage (/var/lib/containers) to the same path inside container
+    sudo podman run --rm --privileged \
+      -v /var/lib/containers:/var/lib/containers:z \
       quay.io/centos-bootc/centos-bootc:stream10 \
       /usr/libexec/bootc-base-imagectl \
       rechunk --max-layers 67 \
-      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
-      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
+      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
+    
     # Replace the original image with the rechunked version
-    sudo podman --root $HOME/.local/share/containers/storage tag \
-      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked" \
-      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+    sudo podman tag \
+      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked" \
+      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+    
     # Clean up the temporary tag
-    sudo podman --root $HOME/.local/share/containers/storage rmi \
-      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
+    sudo podman rmi "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
+    
+    # Pull rechunked image back to user storage for the push step
+    podman pull containers-storage:localhost/"${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
 ```
 
 **Parameters:**
 - `--max-layers 67`: Optimal balance between granularity and overhead
 - Uses `quay.io/centos-bootc/centos-bootc:stream10` which contains the `bootc-base-imagectl` tool
-- Mounts user's podman storage to `/var/tmp/storage` inside the container (simple path that exists in minimal bootc images)
-- Passes `--root /var/tmp/storage` to `bootc-base-imagectl` to access the mounted storage correctly
+- **Storage approach**: Transfers images between user and root storage to work around path constraints
+- Mounts `/var/lib/containers` to same path inside container (avoids database path mismatch)
 - Creates temporary `-rechunked` tag, then replaces original
-- `--root $HOME/.local/share/containers/storage`: Access user's podman storage where buildah-build stores images
-- Uses the base image itself as the rechunking tool container
-- In-place rechunking (same input and output tag)
+- Based on proven [AlmaLinux/bootc-images](https://github.com/AlmaLinux/bootc-images) approach
 - References image as `IMAGE:TAG` - matches how buildah-build tags it
 - Based on the approach from @zirconium-dev/zirconium and @projectbluefin/finpilot
 

@@ -142,22 +142,30 @@ jobs:
       # Reduces update bandwidth by 5-10x through evenly-sized, resumable layer chunks
       - name: Rechunk image
         run: |
+          # Push image from user storage to root storage (buildah-build uses user storage)
+          podman push "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+            containers-storage:localhost/"${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          
           # Use a bootc base image to run the rechunk tool (which contains bootc-base-imagectl)
-          # Mount the user's podman storage to /var/lib/containers/storage (default location)
-          sudo podman --root $HOME/.local/share/containers/storage run --rm --privileged \
-            -v $HOME/.local/share/containers/storage:/var/lib/containers/storage:z \
+          # Mount root's podman storage (/var/lib/containers) to the same path inside container
+          sudo podman run --rm --privileged \
+            -v /var/lib/containers:/var/lib/containers:z \
             quay.io/centos-bootc/centos-bootc:stream10 \
             /usr/libexec/bootc-base-imagectl \
             rechunk --max-layers 67 \
-            "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
-            "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
+            "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+            "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
+          
           # Replace the original image with the rechunked version
-          sudo podman --root $HOME/.local/share/containers/storage tag \
-            "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked" \
-            "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          sudo podman tag \
+            "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked" \
+            "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          
           # Clean up the temporary tag
-          sudo podman --root $HOME/.local/share/containers/storage rmi \
-            "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
+          sudo podman rmi "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
+          
+          # Pull rechunked image back to user storage for the push step
+          podman pull containers-storage:localhost/"${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
 
       # SBOM (OPTIONAL): Software Bill of Materials generation using Syft
       # Creates a detailed inventory of all software components in the image for supply chain security.

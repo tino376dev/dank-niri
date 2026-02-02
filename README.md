@@ -240,39 +240,49 @@ Ready to take your custom OS to production? Enable these features for enhanced s
 Image rechunking is now **enabled by default** in this repository. The workflow automatically:
 
 1. Builds the container image
-2. Rechunks the image layers for optimal update performance
-3. Pushes the optimized image to the registry
+2. Transfers image from user storage to root storage
+3. Rechunks the image layers for optimal update performance using root storage
+4. Pulls rechunked image back to user storage
+5. Pushes the optimized image to the registry
 
 The rechunking step is implemented in `.github/workflows/build.yml`:
 
 ```yaml
 - name: Rechunk image
   run: |
+    # Push image from user storage to root storage (buildah-build uses user storage)
+    podman push "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+      containers-storage:localhost/"${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+    
     # Use a bootc base image to run the rechunk tool (which contains bootc-base-imagectl)
-    # Mount the user's podman storage to /var/lib/containers/storage (default location)
-    sudo podman --root $HOME/.local/share/containers/storage run --rm --privileged \
-      -v $HOME/.local/share/containers/storage:/var/lib/containers/storage:z \
+    # Mount root's podman storage (/var/lib/containers) to the same path inside container
+    sudo podman run --rm --privileged \
+      -v /var/lib/containers:/var/lib/containers:z \
       quay.io/centos-bootc/centos-bootc:stream10 \
       /usr/libexec/bootc-base-imagectl \
       rechunk --max-layers 67 \
-      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
-      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
+      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
+    
     # Replace the original image with the rechunked version
-    sudo podman --root $HOME/.local/share/containers/storage tag \
-      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked" \
-      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+    sudo podman tag \
+      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked" \
+      "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+    
     # Clean up the temporary tag
-    sudo podman --root $HOME/.local/share/containers/storage rmi \
-      "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
+    sudo podman rmi "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}-rechunked"
+    
+    # Pull rechunked image back to user storage for the push step
+    podman pull containers-storage:localhost/"${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
 ```
 
 **How it works:**
-1. Uses `quay.io/centos-bootc/centos-bootc:stream10` which contains `bootc-base-imagectl` tool
-2. Mounts user's podman storage to `/var/lib/containers/storage` (the default storage location)
-3. Tool automatically finds images in the default storage location
-4. Tool reads the original image from mounted storage, rechunks it, and outputs to a temporary tag
-5. Tags the rechunked version with the original tag name
-6. Removes the temporary tag to clean up
+1. **Transfer to root storage**: Pushes image from buildah-build's user storage to root's storage
+2. **Run rechunk tool**: Uses `quay.io/centos-bootc/centos-bootc:stream10` which contains `bootc-base-imagectl`
+3. **Mount root storage**: Mounts `/var/lib/containers` to same path inside container (avoids database path issues)
+4. **Rechunk**: Tool reads the original image, rechunks it with 67 evenly-sized layers, outputs to temporary tag
+5. **Replace original**: Tags the rechunked version with the original tag name
+6. **Transfer back**: Pulls rechunked image back to user storage for final registry push
 
 **Configuration:**
 - Uses `--max-layers 67` for optimal balance between granularity and overhead
