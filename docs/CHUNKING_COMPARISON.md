@@ -29,12 +29,12 @@ This document compares our bootc chunking implementation with the approach descr
 - name: Rechunk image
   run: |
     # Push image from user storage to root storage (buildah-build uses user storage)
-    # Tag without localhost/ prefix in root storage (rpm-ostree expects this format)
     podman push "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
       containers-storage:"${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
     
     # Use a bootc base image to run the rechunk tool (which contains bootc-base-imagectl)
     # Mount root's podman storage (/var/lib/containers) to the same path inside container
+    # bootc-base-imagectl automatically adds containers-storage: prefix internally
     sudo podman run --rm --privileged \
       -v /var/lib/containers:/var/lib/containers:z \
       quay.io/centos-bootc/centos-bootc:stream10 \
