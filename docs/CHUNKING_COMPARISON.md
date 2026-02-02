@@ -30,8 +30,6 @@ This document compares our bootc chunking implementation with the approach descr
   run: |
     # Use --root to access user's podman storage where buildah-build stored the image  
     sudo podman --root $HOME/.local/share/containers/storage run --rm --privileged --pull=never \
-      -v /var/lib/containers:/var/lib/containers \
-      -v $HOME/.local/share/containers:$HOME/.local/share/containers \
       --entrypoint /usr/libexec/bootc-base-imagectl \
       "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
       rechunk --max-layers 67 \
@@ -43,11 +41,9 @@ This document compares our bootc chunking implementation with the approach descr
 - `--max-layers 67`: Optimal balance between granularity and overhead
 - `--pull=never`: Critical! Forces podman to use local image only (sudo changes registry behavior)
 - `--root $HOME/.local/share/containers/storage`: Access user's podman storage where buildah-build stores images
-- `-v $HOME/.local/share/containers:$HOME/.local/share/containers`: Mount user's storage into container
 - Uses the base image itself as the rechunking tool container
 - In-place rechunking (same input and output tag)
 - References image as `IMAGE:TAG` - matches how buildah-build tags it
-- Mounts `/var/lib/containers` to access host's container storage
 - Based on the approach from @zirconium-dev/zirconium and @projectbluefin/finpilot
 
 **Note**: The image reference format varies by build tool:

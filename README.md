@@ -250,8 +250,6 @@ The rechunking step is implemented in `.github/workflows/build.yml`:
   run: |
     # Use --root to access user's podman storage where buildah-build stored the image
     sudo podman --root $HOME/.local/share/containers/storage run --rm --privileged --pull=never \
-      -v /var/lib/containers:/var/lib/containers \
-      -v $HOME/.local/share/containers:$HOME/.local/share/containers \
       --entrypoint /usr/libexec/bootc-base-imagectl \
       "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
       rechunk --max-layers 67 \
