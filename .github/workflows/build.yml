@@ -143,7 +143,7 @@ jobs:
           echo ""
           echo "=== Starting rechunk process ==="
           echo "Image to rechunk: localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-          podman run --rm --privileged \
+          sudo podman run --rm --privileged \
             -v /var/lib/containers:/var/lib/containers \
             --entrypoint /usr/libexec/bootc-base-imagectl \
             "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \

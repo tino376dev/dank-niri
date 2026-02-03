@@ -45,6 +45,10 @@ echo "::endgroup::"
 
 echo "::group:: Install Packages"
 
+# Install bootc-image-builder for rechunking support
+# This provides /usr/libexec/bootc-base-imagectl used during CI rechunking
+dnf5 install -y bootc-image-builder
+
 # Install packages using dnf5
 dnf5 install -y \
     bat \
