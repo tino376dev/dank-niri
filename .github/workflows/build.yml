@@ -127,9 +127,9 @@ jobs:
       - name: Verify composefs configuration
         run: |
           echo "Verifying composefs configuration in image..."
-          if podman run --rm "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" test -f /usr/lib/ostree/prepare-root.conf; then
+          if podman run --rm --pull=never "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" test -f /usr/lib/ostree/prepare-root.conf; then
             echo "✓ Composefs configuration file exists"
-            podman run --rm "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" cat /usr/lib/ostree/prepare-root.conf
+            podman run --rm --pull=never "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" cat /usr/lib/ostree/prepare-root.conf
           else
             echo "✗ ERROR: Composefs configuration file not found!"
             exit 1
