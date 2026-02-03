@@ -111,9 +111,11 @@ jobs:
           # Build with podman instead of buildah-build action to ensure compatibility with rechunking
           # Apply labels from metadata step
           LABEL_ARGS=""
-          for label in ${{ steps.metadata.outputs.labels }}; do
-            LABEL_ARGS="$LABEL_ARGS --label $label"
-          done
+          while IFS= read -r label; do
+            if [ -n "$label" ]; then
+              LABEL_ARGS="$LABEL_ARGS --label \"$label\""
+            fi
+          done <<< "${{ steps.metadata.outputs.labels }}"
           
           sudo podman build \
             $LABEL_ARGS \
