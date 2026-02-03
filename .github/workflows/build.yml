@@ -117,7 +117,7 @@ jobs:
             fi
           done <<< "${{ steps.metadata.outputs.labels }}"
           
-          sudo podman build \
+          podman build \
             "${LABEL_ARGS[@]}" \
             -t "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
             -f ./Containerfile \
@@ -149,7 +149,7 @@ jobs:
           echo "=== Starting rechunk process ==="
           echo "Image to rechunk: localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
           echo "Using --pull=never to prevent registry lookups"
-          sudo podman run --rm --privileged --pull=never \
+          podman run --rm --privileged --pull=never \
             -v /var/lib/containers:/var/lib/containers \
             --entrypoint /usr/libexec/bootc-base-imagectl \
             "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
