@@ -109,16 +109,16 @@ jobs:
         id: build_image
         run: |
           # Build with podman instead of buildah-build action to ensure compatibility with rechunking
-          # Apply labels from metadata step
-          LABEL_ARGS=""
+          # Apply labels from metadata step using bash array
+          LABEL_ARGS=()
           while IFS= read -r label; do
             if [ -n "$label" ]; then
-              LABEL_ARGS="$LABEL_ARGS --label \"$label\""
+              LABEL_ARGS+=(--label "$label")
             fi
           done <<< "${{ steps.metadata.outputs.labels }}"
           
           sudo podman build \
-            $LABEL_ARGS \
+            "${LABEL_ARGS[@]}" \
             -t "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
             -f ./Containerfile \
             .
