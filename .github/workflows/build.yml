@@ -107,24 +107,27 @@ jobs:
 
       - name: Build Image
         id: build_image
-        uses: redhat-actions/buildah-build@7a95fa7ee0f02d552a32753e7414641a04307056 # v2
-        with:
-          containerfiles: |
-            ./Containerfile
-          # Postfix image name with -custom to make it a little more descriptive
-          # Syntax: https://docs.github.com/en/actions/learn-github-actions/expressions#format
-          image: ${{ env.IMAGE_NAME }}
-          tags: ${{ env.DEFAULT_TAG }}
-          labels: ${{ steps.metadata.outputs.labels }}
-          oci: false
+        run: |
+          # Build with podman instead of buildah-build action to ensure compatibility with rechunking
+          # Apply labels from metadata step
+          LABEL_ARGS=""
+          for label in ${{ steps.metadata.outputs.labels }}; do
+            LABEL_ARGS="$LABEL_ARGS --label $label"
+          done
+          
+          sudo podman build \
+            $LABEL_ARGS \
+            -t "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+            -f ./Containerfile \
+            .
 
       # Verify composefs configuration is present in the built image
       - name: Verify composefs configuration
         run: |
           echo "Verifying composefs configuration in image..."
-          if podman run --rm ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} test -f /usr/lib/ostree/prepare-root.conf; then
+          if podman run --rm "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" test -f /usr/lib/ostree/prepare-root.conf; then
             echo "✓ Composefs configuration file exists"
-            podman run --rm ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} cat /usr/lib/ostree/prepare-root.conf
+            podman run --rm "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" cat /usr/lib/ostree/prepare-root.conf
           else
             echo "✗ ERROR: Composefs configuration file not found!"
             exit 1
@@ -157,7 +160,7 @@ jobs:
       - name: Tag for registry
         run: |
           for tag in ${{ steps.metadata.outputs.tags }}; do
-            podman tag ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} ${{ env.IMAGE_NAME }}:$tag
+            podman tag "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" "${{ env.IMAGE_NAME }}:$tag"
           done
 
       # SBOM (OPTIONAL): Software Bill of Materials generation using Syft
