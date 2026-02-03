@@ -143,11 +143,11 @@ jobs:
           echo ""
           echo "=== Starting rechunk process ==="
           echo "Image to rechunk: localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-          echo "Using containers-storage: transport to force local image usage"
-          sudo podman run --rm --privileged \
+          echo "Using --pull=never to prevent registry lookups"
+          sudo podman run --rm --privileged --pull=never \
             -v /var/lib/containers:/var/lib/containers \
             --entrypoint /usr/libexec/bootc-base-imagectl \
-            "containers-storage:localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+            "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
             rechunk --max-layers 67 \
             "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
             "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
