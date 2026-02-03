@@ -33,10 +33,11 @@ This custom bootc image is based on **Fedora Silverblue** and includes these def
 - **Multi-stage build architecture** - Leverages @projectbluefin/common for desktop configuration
 - **Homebrew integration** - Runtime package management via brew
 - **Composefs enabled** - Efficient chunked updates for bootc with reduced bandwidth usage
+- **Image rechunking enabled** - Optimized bootc layers reduce update sizes by 5-10x (max-layers: 67)
 
 *This image serves as a starting point. Customize by modifying files in `build/`, `custom/brew/`, `custom/flatpaks/`, and `custom/ujust/` directories.*
 
-*Last updated: 2026-02-01*
+*Last updated: 2026-02-03*
 
 ## About This Template
 
@@ -230,15 +231,11 @@ Ready to take your custom OS to production? Enable these features for enhanced s
     5. Commit and push
   - Status: **Disabled by default** (requires signing first)
 
-- [ ] **Enable Image Rechunking** (Recommended)
+- [x] **Enable Image Rechunking** (Recommended)
   - Optimizes bootc image layers for better update performance
   - Reduces update sizes by 5-10x
   - Improves download resumability with evenly sized layers
-  - To enable:
-    1. Edit `.github/workflows/build.yml`
-    2. Find the "Build Image" step
-    3. Add a rechunk step after the build (see example below)
-  - Status: **Not enabled by default** (optional optimization)
+  - Status: **Enabled** - Implemented in `.github/workflows/build.yml` with `--max-layers 67`
 
 #### Adding Image Rechunking
 
