@@ -142,14 +142,14 @@ jobs:
           podman images --format "{{.Repository}}:{{.Tag}} (ID: {{.ID}})" | grep "${{ env.IMAGE_NAME }}"
           echo ""
           echo "=== Starting rechunk process ==="
-          echo "Image to rechunk: ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+          echo "Image to rechunk: localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
           sudo podman run --rm --privileged \
             -v /var/lib/containers:/var/lib/containers \
             --entrypoint /usr/libexec/bootc-base-imagectl \
-            "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+            "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
             rechunk --max-layers 67 \
-            "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
-            "${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
+            "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
+            "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
           echo "=== Rechunk completed successfully ==="
 
       # Tag for registry
