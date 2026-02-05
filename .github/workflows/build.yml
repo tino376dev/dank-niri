@@ -135,7 +135,9 @@ jobs:
       # Uses the ublue-os/legacy-rechunk tooling via Just recipes
       - name: Rechunk Image
         run: |
-          sudo -E just rechunk localhost/${{ env.IMAGE_NAME }} ${{ env.DEFAULT_TAG }}
+          # Find the just binary path
+          JUST_BIN=$(which just)
+          sudo -E "${JUST_BIN}" rechunk localhost/${{ env.IMAGE_NAME }} ${{ env.DEFAULT_TAG }}
 
       # Load rechunked image back into podman
       - name: Load Rechunked Image
