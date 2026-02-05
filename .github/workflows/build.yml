@@ -132,25 +132,15 @@ jobs:
 
       # Rechunk the image for optimized bootc updates
       # This reduces update sizes by 5-10x and improves download resumability
-      # Reference: https://github.com/zirconium-dev/zirconium
+      # Uses the ublue-os/legacy-rechunk tooling via Just recipes
       - name: Rechunk Image
         run: |
-          echo "=== Debugging: Listing available images ==="
-          podman images
-          echo ""
-          echo "=== Debugging: Image details ==="
-          podman images --format "{{.Repository}}:{{.Tag}} (ID: {{.ID}})" | grep "${{ env.IMAGE_NAME }}" || echo "No images found matching ${{ env.IMAGE_NAME }}"
-          echo ""
-          echo "=== Starting rechunk process ==="
-          echo "Image to rechunk: localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-          podman run --rm --privileged \
-            -v /var/lib/containers:/var/lib/containers \
-            --entrypoint /usr/libexec/bootc-base-imagectl \
-            "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
-            rechunk --max-layers 67 \
-            "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}" \
-            "localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}"
-          echo "=== Rechunk completed successfully ==="
+          sudo -E just rechunk localhost/${{ env.IMAGE_NAME }} ${{ env.DEFAULT_TAG }}
+
+      # Load rechunked image back into podman
+      - name: Load Rechunked Image
+        run: |
+          just load-rechunk localhost/${{ env.IMAGE_NAME }} ${{ env.DEFAULT_TAG }}
 
       # Tag for registry
       - name: Tag for registry
