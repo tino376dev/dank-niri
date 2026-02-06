@@ -118,6 +118,12 @@ jobs:
           labels: ${{ steps.metadata.outputs.labels }}
           oci: false
 
+      # Install just for rechunking recipes
+      - name: Install just
+        uses: extractions/setup-just@dd310ad5a97d8e7b41793f8ef055398d51ad4de6 # v2
+        with:
+          just-version: 1.34.0
+
       # Verify composefs configuration is present in the built image
       - name: Verify composefs configuration
         run: |
