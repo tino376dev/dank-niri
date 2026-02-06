@@ -33,10 +33,11 @@ This custom bootc image is based on **Fedora Silverblue** and includes these def
 - **Multi-stage build architecture** - Leverages @projectbluefin/common for desktop configuration
 - **Homebrew integration** - Runtime package management via brew
 - **Composefs enabled** - Efficient chunked updates for bootc with reduced bandwidth usage
+- **Image rechunking enabled** - Optimized bootc layers reduce update sizes by 5-10x (max-layers: 67)
 
 *This image serves as a starting point. Customize by modifying files in `build/`, `custom/brew/`, `custom/flatpaks/`, and `custom/ujust/` directories.*
 
-*Last updated: 2026-02-01*
+*Last updated: 2026-02-03*
 
 ## About This Template
 
@@ -230,67 +231,41 @@ Ready to take your custom OS to production? Enable these features for enhanced s
     5. Commit and push
   - Status: **Disabled by default** (requires signing first)
 
-- [ ] **Enable Image Rechunking** (Recommended)
+- [x] **Enable Image Rechunking** (Recommended)
   - Optimizes bootc image layers for better update performance
   - Reduces update sizes by 5-10x
   - Improves download resumability with evenly sized layers
-  - To enable:
-    1. Edit `.github/workflows/build.yml`
-    2. Find the "Build Image" step
-    3. Add a rechunk step after the build (see example below)
-  - Status: **Not enabled by default** (optional optimization)
+  - Status: **Enabled** - Implemented using ublue-os/legacy-rechunk via Just recipes
 
-#### Adding Image Rechunking
+#### Image Rechunking Implementation
 
-After building your bootc image, add a rechunk step before pushing to the registry. Here's an example based on the workflow used by [zirconium-dev/zirconium](https://github.com/zirconium-dev/zirconium):
+Image rechunking is **enabled** in this repository using the proven approach from [ublue-os/bluefin](https://github.com/ublue-os/bluefin).
 
-```yaml
-- name: Build image
-  id: build
-  run: sudo podman build -t "${IMAGE_NAME}:${DEFAULT_TAG}" -f ./Containerfile .
+**How it works:**
+1. After building the container image, the rechunk step runs
+2. Uses `ghcr.io/ublue-os/legacy-rechunk` container for processing
+3. Three-step process: Prune → Create ostree → Chunk layers
+4. Outputs optimized OCI image that's loaded back into podman
+5. Rechunked image is then tagged and pushed to registry
 
-- name: Rechunk Image
-  run: |
-    sudo podman run --rm --privileged \
-      -v /var/lib/containers:/var/lib/containers \
-      --entrypoint /usr/libexec/bootc-base-imagectl \
-      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
-      rechunk --max-layers 96 \
-      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
-      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}"
+**Implementation:**
+- Justfile contains `rechunk` and `load-rechunk` recipes
+- Build workflow runs `sudo -E just rechunk` after image build
+- Build workflow runs `just load-rechunk` to import rechunked image
 
-- name: Push to Registry
-  run: sudo podman push "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" "${IMAGE_REGISTRY}/${IMAGE_NAME}:${DEFAULT_TAG}"
-```
+**Benefits:**
+- 5-10x bandwidth reduction for bootc updates
+- Better download resumability with evenly distributed layers
+- Uses established Universal Blue tooling
 
-Alternative approach using a temporary tag for clarity:
-
-```yaml
-- name: Rechunk Image
-  run: |
-    sudo podman run --rm --privileged \
-      -v /var/lib/containers:/var/lib/containers \
-      --entrypoint /usr/libexec/bootc-base-imagectl \
-      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
-      rechunk --max-layers 67 \
-      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}" \
-      "localhost/${IMAGE_NAME}:${DEFAULT_TAG}-rechunked"
-    
-    # Tag the rechunked image with the original tag
-    sudo podman tag "localhost/${IMAGE_NAME}:${DEFAULT_TAG}-rechunked" "localhost/${IMAGE_NAME}:${DEFAULT_TAG}"
-    sudo podman rmi "localhost/${IMAGE_NAME}:${DEFAULT_TAG}-rechunked"
-```
-
-**Parameters:**
-- `--max-layers`: Maximum number of layers for the rechunked image (typically 67 for optimal balance)
-- The first image reference is the source (input)
-- The second image reference is the destination (output)
-  - When using the same reference for both, the image is rechunked in-place
-  - You can also use different tags (e.g., `-rechunked` suffix) and then retag if preferred
+The rechunking configuration can be found in:
+- `Justfile` - rechunk and load-rechunk recipes
+- `.github/workflows/build.yml` - workflow integration
 
 **References:**
+- [ublue-os/bluefin implementation](https://github.com/ublue-os/bluefin)
+- [ublue-os/legacy-rechunk](https://github.com/ublue-os/legacy-rechunk)
 - [CoreOS rpm-ostree build-chunked-oci documentation](https://coreos.github.io/rpm-ostree/build-chunked-oci/)
-- [bootc documentation](https://containers.github.io/bootc/)
 
 ### After Enabling Production Features
 

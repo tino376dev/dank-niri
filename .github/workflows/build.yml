@@ -118,17 +118,70 @@ jobs:
           labels: ${{ steps.metadata.outputs.labels }}
           oci: false
 
+      # Install just for rechunking recipes
+      - name: Install just
+        uses: extractions/setup-just@dd310ad5a97d8e7b41793f8ef055398d51ad4de6 # v2
+        with:
+          just-version: 1.34.0
+
       # Verify composefs configuration is present in the built image
       - name: Verify composefs configuration
         run: |
-          echo "Verifying composefs configuration in image..."
-          if podman run --rm ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} test -f /usr/lib/ostree/prepare-root.conf; then
+          echo "=== Debug: Images after build ==="
+          podman images
+          echo ""
+          echo "=== Debug: Checking for built image ==="
+          podman images ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} || echo "Built image not found!"
+          echo ""
+          echo "=== Verifying composefs configuration in image ==="
+          if podman run --rm --pull=never ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} test -f /usr/lib/ostree/prepare-root.conf; then
             echo "✓ Composefs configuration file exists"
-            podman run --rm ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} cat /usr/lib/ostree/prepare-root.conf
+            podman run --rm --pull=never ${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} cat /usr/lib/ostree/prepare-root.conf
           else
             echo "✗ ERROR: Composefs configuration file not found!"
             exit 1
           fi
+
+      # Rechunk the image for optimized bootc updates
+      # This reduces update sizes by 5-10x and improves download resumability
+      # Uses the ublue-os/legacy-rechunk tooling via Just recipes
+      # Note: rechunk recipe handles sudo internally via 'just sudoif'
+      - name: Rechunk Image
+        run: |
+          echo "=== Debug: Environment ==="
+          echo "IMAGE_NAME: ${{ env.IMAGE_NAME }}"
+          echo "DEFAULT_TAG: ${{ env.DEFAULT_TAG }}"
+          echo "User: $(whoami) (UID: $(id -u))"
+          echo ""
+          echo "=== Debug: Available images before rechunk ==="
+          podman images
+          echo ""
+          echo "=== Debug: Checking for target image ==="
+          podman images localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} || echo "Target image not found!"
+          echo ""
+          echo "=== Starting rechunk process ==="
+          just rechunk localhost/${{ env.IMAGE_NAME }} ${{ env.DEFAULT_TAG }}
+          echo ""
+          echo "=== Debug: Files after rechunk ==="
+          ls -lah *.oci* || echo "No OCI files found"
+          ls -lah ${{ env.IMAGE_NAME }}_build* || echo "No build output found"
+
+      # Load rechunked image back into podman
+      - name: Load Rechunked Image
+        run: |
+          echo "=== Debug: Before loading rechunked image ==="
+          echo "Looking for OCI directory..."
+          ls -lah ${{ env.IMAGE_NAME }}_build* || echo "No build output found"
+          echo ""
+          echo "=== Debug: Current podman images ==="
+          podman images
+          echo ""
+          echo "=== Loading rechunked image ==="
+          just load-rechunk localhost/${{ env.IMAGE_NAME }} ${{ env.DEFAULT_TAG }}
+          echo ""
+          echo "=== Debug: After loading rechunked image ==="
+          podman images
+          podman images localhost/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }} || echo "Rechunked image not loaded!"
 
       # Tag for registry
       - name: Tag for registry

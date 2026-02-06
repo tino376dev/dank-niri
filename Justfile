@@ -1,6 +1,7 @@
 export image_name := env("IMAGE_NAME", "dank-niri")
 export default_tag := env("DEFAULT_TAG", "stable")
 export bib_image := env("BIB_IMAGE", "quay.io/centos-bootc/bootc-image-builder:latest@sha256:903c01d110b8533f8891f07c69c0ba2377f8d4bc7e963311082b7028c04d529d")
+export rechunker_image := env("RECHUNKER_IMAGE", "ghcr.io/ublue-os/legacy-rechunk:v1.0.1-x86_64@sha256:2627cbf92ca60ab7372070dcf93b40f457926f301509ffba47a04d6a9e1ddaf7")
 
 alias build-vm := build-qcow2
 alias rebuild-vm := rebuild-qcow2
@@ -86,7 +87,7 @@ sudoif command *args:
 #
 
 # Build the image using the specified parameters
-build $target_image=image_name $tag=default_tag:
+build target_image=image_name tag=default_tag:
     #!/usr/bin/env bash
 
     BUILD_ARGS=()
@@ -99,6 +100,140 @@ build $target_image=image_name $tag=default_tag:
         --pull=newer \
         --tag "${target_image}:${tag}" \
         .
+
+# Rechunk Image for optimized bootc updates
+# This reduces update sizes by 5-10x through even layer distribution
+# Based on ublue-os/bluefin implementation
+[group('Image')]
+rechunk target_image=image_name tag=default_tag:
+    #!/usr/bin/bash
+    set -eoux pipefail
+
+    echo "::group:: Rechunk Prep"
+
+    # Check if image is already built
+    ID=$(podman images --filter reference="${target_image}:${tag}" --format "'{{ '{{.ID}}' }}'")
+    if [[ -z "$ID" ]]; then
+        just build "${target_image}" "${tag}"
+    fi
+
+    # Load into Rootful Podman if needed
+    ID=$(just sudoif podman images --filter reference="${target_image}:${tag}" --format "'{{ '{{.ID}}' }}'")
+    if [[ -z "$ID" ]]; then
+        COPYTMP=$(mktemp -p "${PWD}" -d -t podman_scp.XXXXXXXXXX)
+        just sudoif TMPDIR=${COPYTMP} podman image scp ${UID}@localhost::"${target_image}:${tag}" root@localhost::"${target_image}:${tag}"
+        rm -rf "${COPYTMP}"
+    fi
+
+    # Prep Container
+    CREF=$(just sudoif podman create "${target_image}:${tag}" bash)
+    OLD_IMAGE=$(just sudoif podman inspect $CREF | jq -r '.[].Image')
+    OUT_NAME="${target_image}_build"
+    MOUNT=$(just sudoif podman mount "${CREF}")
+
+    # Get Version from image labels
+    VERSION=$(just sudoif podman inspect $CREF | jq -r '.[].Config.Labels["org.opencontainers.image.version"]')
+
+    # Git SHA
+    SHA="unknown"
+    if [[ -z "$(git status -s)" ]]; then
+        SHA=$(git rev-parse HEAD)
+    fi
+
+    # Labels for rechunked image
+    LABELS="
+        org.opencontainers.image.title=${target_image}
+        org.opencontainers.image.version=${VERSION}
+        containers.bootc=1
+        org.opencontainers.image.created=$(date -u +%Y\-%m\-%d\T%H\:%M\:%S\Z)
+    "
+
+    echo "::endgroup::"
+    echo "::group:: Prune"
+
+    # Run Rechunker's Prune
+    just sudoif podman run --rm \
+        --pull=newer \
+        --security-opt label=disable \
+        --volume "$MOUNT":/var/tree \
+        --env TREE=/var/tree \
+        --user 0:0 \
+        "${rechunker_image}" \
+        /sources/rechunk/1_prune.sh
+
+    echo "::endgroup::"
+    echo "::group:: Create ostree tree"
+
+    # Run Rechunker's Create
+    just sudoif podman run --rm \
+        --security-opt label=disable \
+        --volume "$MOUNT":/var/tree \
+        --volume "cache_ostree:/var/ostree" \
+        --env TREE=/var/tree \
+        --env REPO=/var/ostree/repo \
+        --env RESET_TIMESTAMP=1 \
+        --user 0:0 \
+        "${rechunker_image}" \
+        /sources/rechunk/2_create.sh
+
+    # Cleanup Temp Container Reference
+    just sudoif podman unmount "$CREF"
+    just sudoif podman rm "$CREF"
+    just sudoif podman rmi "$OLD_IMAGE"
+
+    echo "::endgroup::"
+    echo "::group:: Rechunker"
+
+    # Run Rechunker
+    just sudoif podman run --rm \
+        --pull=newer \
+        --security-opt label=disable \
+        --volume "$PWD:/workspace" \
+        --volume "$PWD:/var/git" \
+        --volume cache_ostree:/var/ostree \
+        --env REPO=/var/ostree/repo \
+        --env OUT_NAME="$OUT_NAME" \
+        --env LABELS="${LABELS}" \
+        --env "DESCRIPTION='A niri-based bootc image built on Universal Blue'" \
+        --env "VERSION=${VERSION}" \
+        --env VERSION_FN=/workspace/version.txt \
+        --env OUT_REF="oci:$OUT_NAME" \
+        --env GIT_DIR="/var/git" \
+        --env REVISION="$SHA" \
+        --user 0:0 \
+        "${rechunker_image}" \
+        /sources/rechunk/3_chunk.sh
+
+    # Fix Permissions of OCI
+    just sudoif find ${OUT_NAME} -type d -exec chmod 0755 {} \; || true
+    just sudoif find ${OUT_NAME}* -type f -exec chmod 0644 {} \; || true
+
+    if [[ "${UID}" -gt "0" ]]; then
+        just sudoif chown "${UID}:${GROUPS}" -R "${PWD}"
+    elif [[ -n "${SUDO_UID:-}" ]]; then
+        chown "${SUDO_UID}":"${SUDO_GID}" -R "${PWD}"
+    fi
+
+    # Remove cache_ostree
+    just sudoif podman volume rm cache_ostree
+
+    echo "::endgroup::"
+
+# Load rechunked OCI into Podman Store
+[group('Image')]
+load-rechunk target_image=image_name tag=default_tag:
+    #!/usr/bin/bash
+    set -eou pipefail
+
+    # Load Image from OCI directory
+    OUT_NAME="${target_image}_build"
+    IMAGE=$(podman pull oci:"${PWD}"/"${OUT_NAME}")
+    podman tag ${IMAGE} "${target_image}:${tag}"
+
+    # Cleanup OCI directory
+    rm -rf "${OUT_NAME}"*
+    rm -f previous.manifest.json
+    rm -f version.txt
 
 # Command: _rootful_load_image
 # Description: This script checks if the current user is root or running under sudo. If not, it attempts to resolve the image tag using podman inspect.
@@ -117,7 +252,7 @@ build $target_image=image_name $tag=default_tag:
 # 3. If the image is found, load it into rootful podman using podman scp.
 # 4. If the image is not found, pull it from the remote repository into reootful podman.
 
-_rootful_load_image $target_image=image_name $tag=default_tag:
+_rootful_load_image target_image=image_name tag=default_tag:
     #!/usr/bin/bash
     set -eoux pipefail
 
@@ -158,7 +293,7 @@ _rootful_load_image $target_image=image_name $tag=default_tag:
 #   config: The configuration file to use for the build (default: iso/disk.toml)
 
 # Example: just _rebuild-bib localhost/fedora latest qcow2 iso/disk.toml
-_build-bib $target_image $tag $type $config: (_rootful_load_image target_image tag)
+_build-bib target_image tag type config: (_rootful_load_image target_image tag)
     #!/usr/bin/env bash
     set -euo pipefail
 
@@ -195,34 +330,34 @@ _build-bib $target_image $tag $type $config: (_rootful_load_image target_image t
 #   config: The configuration file to use for the build (deafult: iso/disk.toml)
 
 # Example: just _rebuild-bib localhost/fedora latest qcow2 iso/disk.toml
-_rebuild-bib $target_image $tag $type $config: (build target_image tag) && (_build-bib target_image tag type config)
+_rebuild-bib target_image tag type config: (build target_image tag) && (_build-bib target_image tag type config)
 
 # Build a QCOW2 virtual machine image
 [group('Build Virtal Machine Image')]
-build-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "qcow2" "iso/disk.toml")
+build-qcow2 target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "qcow2" "iso/disk.toml")
 
 # Build a RAW virtual machine image
 [group('Build Virtal Machine Image')]
-build-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "raw" "iso/disk.toml")
+build-raw target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "raw" "iso/disk.toml")
 
 # Build an ISO virtual machine image
 [group('Build Virtal Machine Image')]
-build-iso $target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "iso" "iso/iso.toml")
+build-iso target_image=("localhost/" + image_name) $tag=default_tag: && (_build-bib target_image tag "iso" "iso/iso.toml")
 
 # Rebuild a QCOW2 virtual machine image
 [group('Build Virtal Machine Image')]
-rebuild-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_rebuild-bib target_image tag "qcow2" "iso/disk.toml")
+rebuild-qcow2 target_image=("localhost/" + image_name) $tag=default_tag: && (_rebuild-bib target_image tag "qcow2" "iso/disk.toml")
 
 # Rebuild a RAW virtual machine image
 [group('Build Virtal Machine Image')]
-rebuild-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_rebuild-bib target_image tag "raw" "iso/disk.toml")
+rebuild-raw target_image=("localhost/" + image_name) $tag=default_tag: && (_rebuild-bib target_image tag "raw" "iso/disk.toml")
 
 # Rebuild an ISO virtual machine image
 [group('Build Virtal Machine Image')]
-rebuild-iso $target_image=("localhost/" + image_name) $tag=default_tag: && (_rebuild-bib target_image tag "iso" "iso/iso.toml")
+rebuild-iso target_image=("localhost/" + image_name) $tag=default_tag: && (_rebuild-bib target_image tag "iso" "iso/iso.toml")
 
 # Run a virtual machine with the specified image type and configuration
-_run-vm $target_image $tag $type $config:
+_run-vm target_image tag type config:
     #!/usr/bin/bash
     set -eoux pipefail
 
@@ -265,15 +400,15 @@ _run-vm $target_image $tag $type $config:
 
 # Run a virtual machine from a QCOW2 image
 [group('Run Virtal Machine')]
-run-vm-qcow2 $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "qcow2" "iso/disk.toml")
+run-vm-qcow2 target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "qcow2" "iso/disk.toml")
 
 # Run a virtual machine from a RAW image
 [group('Run Virtal Machine')]
-run-vm-raw $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "raw" "iso/disk.toml")
+run-vm-raw target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "raw" "iso/disk.toml")
 
 # Run a virtual machine from an ISO
 [group('Run Virtal Machine')]
-run-vm-iso $target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "iso" "iso/iso.toml")
+run-vm-iso target_image=("localhost/" + image_name) $tag=default_tag: && (_run-vm target_image tag "iso" "iso/iso.toml")
 
 # Run a virtual machine using systemd-vmspawn
 [group('Run Virtal Machine')]
