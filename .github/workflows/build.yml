@@ -133,11 +133,10 @@ jobs:
       # Rechunk the image for optimized bootc updates
       # This reduces update sizes by 5-10x and improves download resumability
       # Uses the ublue-os/legacy-rechunk tooling via Just recipes
+      # Note: rechunk recipe handles sudo internally via 'just sudoif'
       - name: Rechunk Image
         run: |
-          # Find the just binary path
-          JUST_BIN=$(which just)
-          sudo -E "${JUST_BIN}" rechunk localhost/${{ env.IMAGE_NAME }} ${{ env.DEFAULT_TAG }}
+          just rechunk localhost/${{ env.IMAGE_NAME }} ${{ env.DEFAULT_TAG }}
 
       # Load rechunked image back into podman
       - name: Load Rechunked Image
