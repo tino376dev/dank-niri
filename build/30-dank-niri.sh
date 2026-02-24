@@ -14,6 +14,8 @@ copr_install_isolated_no_recommends "yalter/niri" niri
 # Using avengemedia/dms COPR. Note that enabling this automatically enables avengemedia/danklinux.
 copr_install_isolated "avengemedia/danklinux" cliphist danksearch dgop dms-greeter material-symbols-fonts matugen quickshell
 copr_install_isolated "avengemedia/dms" dms
+# required for gif plugin
+dnf5 install -y qt6-qtimageformats 
 
 # Copy brew system files from OCI container
 cp -avf /ctx/oci/brew/. /
