@@ -55,7 +55,6 @@ dnf5 install -y \
     fish \
     foot \
     fprintd \
-    fuzzel \
     git-delta \
     gnome-keyring-pam \
     helix \
