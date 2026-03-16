@@ -43,8 +43,8 @@ rm -f /etc/yum.repos.d/microsoft-edge.repo
 
 echo "Microsoft Edge installed successfully"
 
-### Install VS Code Insiders
-echo "Installing VS Code Insiders..."
+### Install VS Code
+echo "Installing VS Code..."
 
 # Add VS Code repository
 cat > /etc/yum.repos.d/vscode.repo << 'EOF'
@@ -56,11 +56,11 @@ gpgcheck=1
 gpgkey=https://packages.microsoft.com/keys/microsoft.asc
 EOF
 
-# Install VS Code Insiders
-dnf5 install -y code-insiders
+# Install VS Code
+dnf5 install -y code
 
 # Clean up repo file (required - repos don't work at runtime in bootc images)
 rm -f /etc/yum.repos.d/vscode.repo
 
-echo "VS Code Insiders installed successfully"
+echo "VS Code installed successfully"
 echo "Microsoft applications installation complete!"
