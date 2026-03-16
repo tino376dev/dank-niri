@@ -49,14 +49,18 @@ echo "::group:: Install Packages"
 dnf5 install -y \
     bat \
     brightnessctl \
+    cups-pk-helper \
     dbus-tools \
     fd-find \
     fish \
     foot \
+    fprintd \
     fuzzel \
     git-delta \
     gnome-keyring-pam \
     helix \
+    i2c-tools \
+    kf6-kimageformats \    
     micro \
     nautilus \
     openfortivpn \
