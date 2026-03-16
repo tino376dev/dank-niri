@@ -59,7 +59,7 @@ dnf5 install -y \
     gnome-keyring-pam \
     helix \
     i2c-tools \
-    kf6-kimageformats \    
+    kf6-kimageformats \
     micro \
     nautilus \
     openfortivpn \
