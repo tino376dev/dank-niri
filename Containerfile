@@ -84,7 +84,8 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     /ctx/build/20-terra.sh && \
     /ctx/build/21-zen-browser.sh && \
     /ctx/build/30-dank-niri.sh && \
-    /ctx/build/40-microsoft-app.sh
+    /ctx/build/40-microsoft-app.sh && \
+    rm -f /usr/share/rpm/.rpm.lock*
     
 ### LINTING
 ## Verify final image and contents are correct.
