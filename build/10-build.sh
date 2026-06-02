@@ -47,7 +47,7 @@ echo "::group:: Install Packages"
 
 # Install packages using dnf5
 dnf5 install -y \
-    allacrity \
+    alacritty \
     bat \
     brightnessctl \
     cups-pk-helper \
