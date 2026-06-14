@@ -17,6 +17,7 @@ This custom bootc image is based on **Fedora Silverblue** and includes these def
 ### Added Packages (Build-time)
 - **System packages**: bat, brightnessctl, dbus-tools, fd-find, fish, foot, fuzzel, git-delta, gnome-keyring-pam, helix, micro, nautilus, openfortivpn, podman-compose, podman-docker, power-profiles-daemon, qt5ct, qt6ct, ripgrep, xdg-desktop-portal-gtk, xdg-desktop-portal-gnome, xdg-terminal-exec, xdg-user-dirs, zoxide
 - **From COPR**: starship (atim/starship), nushell (atim/nushell), yazi (lihaohong/yazi)
+- **From official repo**: tailscale (pkgs.tailscale.com stable)
 - **Microsoft apps**: Microsoft Edge (stable), VS Code Insiders - Installed from official Microsoft repositories
 
 ### Included Applications (Runtime)
@@ -30,13 +31,14 @@ This custom bootc image is based on **Fedora Silverblue** and includes these def
 
 ### System Configuration
 - **Podman socket enabled** - Container runtime ready out of the box
+- **Tailscaled service enabled** - Tailscale daemon starts automatically after deployment
 - **Multi-stage build architecture** - Leverages @projectbluefin/common for desktop configuration
 - **Homebrew integration** - Runtime package management via brew
 - **Composefs enabled** - Efficient chunked updates for bootc with reduced bandwidth usage
 
 *This image serves as a starting point. Customize by modifying files in `build/`, `custom/brew/`, `custom/flatpaks/`, and `custom/ujust/` directories.*
 
-*Last updated: 2026-02-01*
+*Last updated: 2026-06-14*
 
 ## About This Template
 

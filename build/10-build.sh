@@ -81,10 +81,22 @@ copr_install_isolated "atim/nushell" nushell
 
 echo "::endgroup::"
 
+echo "::group:: Install Third-Party Packages"
+
+# Install Tailscale from official repository (Fedora 41+ instructions adapted for dnf5)
+dnf5 config-manager addrepo --from-repofile=https://pkgs.tailscale.com/stable/fedora/tailscale.repo
+dnf5 install -y tailscale
+
+# Remove repo file after install to keep bootc image repository state clean
+rm -f /etc/yum.repos.d/tailscale.repo
+
+echo "::endgroup::"
+
 echo "::group:: System Configuration"
 
 # Enable/disable systemd services
 systemctl enable podman.socket
+systemctl enable tailscaled
 # Example: systemctl mask unwanted-service
 
 echo "::endgroup::"
