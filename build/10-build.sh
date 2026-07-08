@@ -77,8 +77,20 @@ dnf5 install -y \
     xdg-user-dirs \
     zoxide
 
-# Install nushell from COPR
-copr_install_isolated "atim/nushell" nushell
+# Install nushell from Gemfury repository
+cat > /etc/yum.repos.d/gemfury-nushell.repo << 'EOF'
+[gemfury-nushell]
+name=Gemfury Nushell Repo
+baseurl=https://yum.fury.io/nushell/
+enabled=1
+gpgcheck=0
+gpgkey=https://yum.fury.io/nushell/gpg.key
+EOF
+
+dnf5 install -y nushell
+
+# Disable Gemfury repository after install
+dnf5 config-manager setopt gemfury-nushell.enabled=0
 
 echo "::endgroup::"
 
