@@ -87,7 +87,7 @@ gpgcheck=0
 gpgkey=https://yum.fury.io/nushell/gpg.key
 EOF
 
-dnf5 install -y nushell
+dnf5 -y --setopt=tsflags=noscripts install nushell
 
 # Disable Gemfury repository after install
 dnf5 config-manager setopt gemfury-nushell.enabled=0
